@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #f7f7fb;
+  background-image: radial-gradient(circle at top, rgba(109, 91, 250, 0.06), transparent 55%);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: rgb(109 91 250 / 0.25);
+}
+
+/* Custom checkbox-style radio dot used on the confirm page's store picker */
+input[type="radio"] {
+  accent-color: #5a3ff0;
+}

@@ -1,0 +1,32 @@
+name: Sync competitor prices
+
+# Runs the competitor price sync independent of app uptime (ARCHITECTURE.md
+# §7) - connects directly to the Neon database, not through the FastAPI app.
+on:
+  schedule:
+    # 03:17 UTC daily - off the hour, avoids piling onto :00 with everyone
+    # else's cron jobs.
+    - cron: "17 3 * * *"
+  workflow_dispatch: {} # allows a manual run from the Actions tab
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        working-directory: backend
+        run: pip install -r requirements.txt
+
+      - name: Run sync
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+        run: python -m scripts.sync_competitor_prices

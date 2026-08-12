@@ -1,0 +1,32 @@
+# Render Blueprint - backend only. The frontend deploys to Vercel
+# (ARCHITECTURE.md §3), so it is deliberately absent here.
+#
+# Create from the Render dashboard: New > Blueprint > point at this repo.
+# Secrets marked `sync: false` are NOT stored in git - Render prompts for
+# them on first deploy.
+services:
+  - type: web
+    name: tradein-api
+    runtime: python
+    plan: free # §3: free for dev, upgrade to Starter before real traffic to avoid cold starts
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    # Migrations run on start rather than as a preDeployCommand because
+    # preDeploy is a paid-plan feature. `alembic upgrade head` is idempotent,
+    # so re-running it on every restart/scale event is safe.
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7" # §3 pins 3.12 for deploys; local dev used 3.14
+      - key: DATABASE_URL
+        sync: false # Neon connection string - paste on first deploy
+      - key: ENCRYPTION_KEY
+        # MUST stay stable for the life of the database: it decrypts
+        # payouts.iban. Rotating it makes every stored IBAN unreadable, so
+        # this is deliberately NOT auto-generated.
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false # the Vercel URL, e.g. https://trade-nl.vercel.app
+      - key: JWT_SECRET
+        generateValue: true # safe to rotate - only invalidates active admin sessions

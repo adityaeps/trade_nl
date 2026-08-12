@@ -1,0 +1,24 @@
+# backend
+backend/.venv/
+backend/__pycache__/
+**/__pycache__/
+*.pyc
+backend/.env
+backend/.pytest_cache/
+backend/.coverage
+
+# frontend
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+frontend/next-env.d.ts
+
+# editors / os
+.DS_Store
+.vscode/
+.idea/
+
+# vercel
+.vercel/
+frontend/.vercel/
+frontend/out/

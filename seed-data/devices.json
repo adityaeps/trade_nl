@@ -1,0 +1,16 @@
+{
+  "note": "Starter/example catalog for local dev seeding. Verify current models, colors, and exact storage/color variants against what Apple/Samsung actually sell and what Swappie.nl and BuyBack.nl actually list before using this in production. has_s_pen gates whether the S-Pen question appears (see seed-data/questions.json) — only Ultra and Z Fold lines are typically S-Pen compatible; only the S25 Ultra is flagged true here, confirm the rest per open_questions in questions.json.",
+  "devices": [
+    { "brand": "apple", "model": "iPhone 16 Pro Max", "storage_gb": 256, "color": "Black Titanium", "category": "phone", "has_s_pen": false, "slug": "iphone-16-pro-max-256gb-black-titanium" },
+    { "brand": "apple", "model": "iPhone 16 Pro Max", "storage_gb": 512, "color": "Black Titanium", "category": "phone", "has_s_pen": false, "slug": "iphone-16-pro-max-512gb-black-titanium" },
+    { "brand": "apple", "model": "iPhone 15 Pro", "storage_gb": 128, "color": "Natural Titanium", "category": "phone", "has_s_pen": false, "slug": "iphone-15-pro-128gb-natural-titanium" },
+    { "brand": "apple", "model": "iPhone 15", "storage_gb": 128, "color": "Blue", "category": "phone", "has_s_pen": false, "slug": "iphone-15-128gb-blue" },
+    { "brand": "apple", "model": "iPhone 14", "storage_gb": 128, "color": "Midnight", "category": "phone", "has_s_pen": false, "slug": "iphone-14-128gb-midnight" },
+    { "brand": "apple", "model": "iPhone 13", "storage_gb": 128, "color": "Starlight", "category": "phone", "has_s_pen": false, "slug": "iphone-13-128gb-starlight" },
+    { "brand": "apple", "model": "iPhone SE (3rd generation)", "storage_gb": 64, "color": "Midnight", "category": "phone", "has_s_pen": false, "slug": "iphone-se-3rd-gen-64gb-midnight" },
+    { "brand": "samsung", "model": "Galaxy S25 Ultra", "storage_gb": 256, "color": "Titanium Black", "category": "phone", "has_s_pen": true, "slug": "galaxy-s25-ultra-256gb-titanium-black" },
+    { "brand": "samsung", "model": "Galaxy S24", "storage_gb": 128, "color": "Onyx Black", "category": "phone", "has_s_pen": false, "slug": "galaxy-s24-128gb-onyx-black" },
+    { "brand": "samsung", "model": "Galaxy A55", "storage_gb": 128, "color": "Awesome Navy", "category": "phone", "has_s_pen": false, "slug": "galaxy-a55-128gb-awesome-navy" },
+    { "brand": "samsung", "model": "Galaxy Z Flip6", "storage_gb": 256, "color": "Silver Shadow", "category": "phone", "has_s_pen": false, "slug": "galaxy-z-flip6-256gb-silver-shadow" }
+  ]
+}
