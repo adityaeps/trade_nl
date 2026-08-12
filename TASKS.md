@@ -272,7 +272,28 @@ Claude Code should resolve on its own.
 
 ## Sprint 9 — Deploy
 
-- [ ] Neon database provisioned
-- [ ] Render backend deployed
-- [ ] Vercel frontend deployed
+Code is deploy-ready and pushed to `github.com/adityaeps/trade_nl`. The
+four items below all require signing in to a third-party account, so they
+need you — see [DEPLOY.md](./DEPLOY.md) for the step-by-step runbook.
+
+- [ ] Neon database provisioned `[owner: business]` — needs a Neon account
+- [ ] Render backend deployed `[owner: business]` — `render.yaml` blueprint
+      is committed; Render prompts for `DATABASE_URL`, `ENCRYPTION_KEY`,
+      `CORS_ORIGINS` on first deploy
+- [ ] Vercel frontend deployed `[owner: business]` — set Root Directory to
+      `frontend` and `NEXT_PUBLIC_API_URL` to the Render URL
 - [ ] GitHub Actions secrets configured for the price-sync workflow
+      `[owner: business]` — `DATABASE_URL`, `JWT_SECRET`, `ENCRYPTION_KEY`
+
+  Prepared and verified locally:
+  - `render.yaml` — backend blueprint, Python pinned to 3.12 per §3,
+    `alembic upgrade head` on start, `/health` healthcheck.
+  - `frontend/vercel.json` + `backend/runtime.txt`.
+  - `DEPLOY.md` — full runbook including rollback and the
+    `ENCRYPTION_KEY`-must-never-rotate warning (rotating it makes every
+    stored IBAN permanently unreadable).
+  - `config.py` normalises the `postgresql://` URL managed providers hand
+    out to `postgresql+psycopg://`; without it the app dies at startup
+    reaching for psycopg2, which isn't installed.
+  - Production build passes (`next build`), which caught a TypeScript
+    error `next dev` had been hiding, and a missing `/admin` index route.
