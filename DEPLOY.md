@@ -4,38 +4,44 @@ Frontend and backend deploy **separately**, per ARCHITECTURE.md §3:
 
 | Piece | Host | Deploys from |
 |---|---|---|
-| Database | Neon (free tier) | — |
+| Database | Render Postgres (free tier) | declared in `render.yaml` |
 | Backend (FastAPI) | Render | `backend/` via `render.yaml` |
 | Frontend (Next.js) | Vercel | `frontend/` |
 | Price sync | Admin UI button (Pricing → "Run price sync"); GitHub Actions manual dispatch as fallback | `.github/workflows/sync-prices.yml` |
 
-Order matters: **Neon → Render → Vercel**. The backend needs the database
-URL, and the frontend needs the backend URL.
+Order matters: **Render (db + backend) → Vercel**. The blueprint creates the
+database and the API together; the frontend then needs the backend URL.
 
 ---
 
-## 1. Neon (database)
+## 1. Database (Render Postgres)
 
-1. Create a project at [neon.tech](https://neon.tech) — region **EU (Frankfurt)**
-   keeps latency low for NL customers and keeps personal data in the EU
-   (relevant: `payouts.iban` and customer contact details).
-2. Copy the connection string. It looks like:
-   `postgresql://user:pass@ep-xxx.eu-central-1.aws.neon.tech/neondb?sslmode=require`
-3. Keep it for step 2 — no need to reformat it. `app/core/config.py`
-   rewrites `postgresql://` to `postgresql+psycopg://` automatically.
+Decided 2026-08-16: Postgres is **Render-managed**, not Neon — database and
+API on one provider. This is a deviation from ARCHITECTURE.md §3; nothing in
+the app cares, since `app/core/config.py` rewrites `postgresql://` to
+`postgresql+psycopg://` whoever hands out the URL.
 
-Schema and seed data are **not** applied here yet — Render does that on
-first deploy (`alembic upgrade head` runs in its start command). Seeding
-the questionnaire is a one-off, see step 4.
+`render.yaml` declares the instance (`tradein-db`) and wires `DATABASE_URL`
+into the API with `fromDatabase`, so **there is no connection string to
+paste** — the blueprint creates both together. Pick region **Frankfurt** so
+NL customer data (`payouts.iban`, contact details) stays in the EU.
+
+> ⚠️ Free Postgres on Render **expires and is deleted** after a fixed window
+> (verify the current term in the dashboard — recently 30 days). Move to a
+> paid instance before any real customer or payout data lands in it.
+
+Schema and seed data are **not** applied here — `alembic upgrade head` runs
+in the API's start command on first deploy, and seeding is a one-off, see
+step 4.
 
 ## 2. Render (backend)
 
-1. **New → Blueprint**, point at this repo. Render reads `render.yaml`.
-2. It will prompt for the three secrets marked `sync: false`:
+1. **New → Blueprint**, point at this repo. Render reads `render.yaml` and
+   creates `tradein-db` + `tradein-api` together.
+2. It will prompt for the two secrets marked `sync: false`:
 
    | Variable | Value |
    |---|---|
-   | `DATABASE_URL` | the Neon string from step 1 |
    | `ENCRYPTION_KEY` | generate with the command below |
    | `CORS_ORIGINS` | leave blank for now — fill in after step 3 |
 
@@ -107,7 +113,9 @@ you must redeploy, not just restart.
 
 5. **GitHub Actions secrets** — add `DATABASE_URL`, `JWT_SECRET`,
    `ENCRYPTION_KEY` under Settings → Secrets → Actions so the price sync can
-   reach Neon directly (§7 — it bypasses the API by design). The workflow
+   reach the database directly (§7 — it bypasses the API by design). Use the
+   database's **external** connection string here, not the internal one:
+   GitHub's runners are outside Render's network. The workflow
    has no schedule: run it from Actions → "Sync competitor prices" → Run
    workflow. Day to day, staff use the admin UI button instead (Pricing →
    "Run price sync"); this workflow is the fallback for when the API is
@@ -126,6 +134,8 @@ images, and `/admin/login` should accept your admin user.
 
 - **Vercel** — Deployments tab → previous build → *Promote to Production*. Instant.
 - **Render** — Events tab → *Rollback* to a previous deploy.
-- **Database** — Neon keeps point-in-time history; restore via branch.
-  Note that a rollback across a migration is *not* automatic: `alembic
-  downgrade` must be run deliberately.
+- **Database** — Render's free Postgres tier has **no backups and no
+  point-in-time restore** (that starts on the paid tiers), so there is
+  currently nothing to roll back to. Take a `pg_dump` before anything
+  destructive. A rollback across a migration is also *not* automatic:
+  `alembic downgrade` must be run deliberately.
