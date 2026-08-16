@@ -83,12 +83,25 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
-export function listDevices(params: { brand?: string; search?: string } = {}) {
+/** How many devices one scroll-page loads. Matches the API's own default. */
+export const DEVICE_PAGE_SIZE = 24;
+
+/**
+ * One page of the catalog, newest models first.
+ *
+ * Paged rather than "everything at once": the catalog is a few hundred
+ * devices, and the storefront appends pages as the customer scrolls. A short
+ * page (fewer than `limit`) means there is nothing left to load.
+ */
+export function listDevices(
+  params: { brand?: string; search?: string; limit?: number; offset?: number } = {}
+) {
   const qs = new URLSearchParams();
   if (params.brand) qs.set("brand", params.brand);
   if (params.search) qs.set("search", params.search);
-  const suffix = qs.toString() ? `?${qs.toString()}` : "";
-  return request<DeviceSummary[]>(`/api/v1/devices${suffix}`);
+  qs.set("limit", String(params.limit ?? DEVICE_PAGE_SIZE));
+  if (params.offset) qs.set("offset", String(params.offset));
+  return request<DeviceSummary[]>(`/api/v1/devices?${qs.toString()}`);
 }
 
 export function getDevice(slug: string) {

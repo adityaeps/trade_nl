@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { listDevices, type DeviceSummary } from "@/lib/api";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { DEVICE_PAGE_SIZE, listDevices, type DeviceSummary } from "@/lib/api";
 import { formatEur } from "@/lib/pricing";
 import { AppleIcon, SamsungIcon, SearchIcon, SparkIcon } from "@/lib/icons";
 
@@ -71,16 +71,82 @@ export default function CatalogPage() {
   const [brand, setBrand] = useState("");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [exhausted, setExhausted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Guards against the observer firing repeatedly while a fetch is already
+  // in flight - it re-triggers on every scroll pixel otherwise, and state
+  // updates land too late to prevent duplicate pages.
+  const fetching = useRef(false);
+  const sentinel = useRef<HTMLDivElement | null>(null);
+
+  // First page, and a fresh one whenever the filters change.
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
     setError(null);
+    setExhausted(false);
+    fetching.current = true;
+
     listDevices({ brand: brand || undefined, search: search || undefined })
-      .then(setDevices)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+      .then((page) => {
+        if (cancelled) return; // a newer filter won the race
+        setDevices(page);
+        setExhausted(page.length < DEVICE_PAGE_SIZE);
+      })
+      .catch((e) => !cancelled && setError(e.message))
+      .finally(() => {
+        if (cancelled) return;
+        setLoading(false);
+        fetching.current = false;
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [brand, search]);
+
+  const loadMore = useCallback(() => {
+    if (fetching.current || exhausted || loading || error) return;
+    fetching.current = true;
+    setLoadingMore(true);
+
+    listDevices({
+      brand: brand || undefined,
+      search: search || undefined,
+      offset: devices.length,
+    })
+      .then((page) => {
+        setDevices((prev) => {
+          // Belt and braces: if a page somehow overlaps (a device added
+          // between requests shifts the offset window), drop the repeats
+          // rather than rendering duplicate keys.
+          const seen = new Set(prev.map((d) => d.id));
+          return [...prev, ...page.filter((d) => !seen.has(d.id))];
+        });
+        setExhausted(page.length < DEVICE_PAGE_SIZE);
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => {
+        setLoadingMore(false);
+        fetching.current = false;
+      });
+  }, [brand, search, devices.length, exhausted, loading, error]);
+
+  // Load the next page when the sentinel below the grid comes into view.
+  // rootMargin starts the fetch ~600px early so the next rows are usually
+  // there by the time the customer scrolls to them.
+  useEffect(() => {
+    const node = sentinel.current;
+    if (!node || exhausted) return;
+    const observer = new IntersectionObserver(
+      (entries) => entries[0].isIntersecting && loadMore(),
+      { rootMargin: "600px" }
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [loadMore, exhausted]);
 
   return (
     <main className="mx-auto max-w-5xl px-4 pb-20 pt-10 sm:px-6">
@@ -170,7 +236,19 @@ export default function CatalogPage() {
                 </div>
               </Link>
             ))}
+        {loadingMore && Array.from({ length: 3 }).map((_, i) => <CardSkeleton key={`more-${i}`} />)}
       </div>
+
+      {/* Scroll target: crossing into view (or within 600px of it) pulls the
+          next page. Rendered only while there is more to fetch, so it can't
+          keep firing at the end of the list. */}
+      {!loading && !exhausted && <div ref={sentinel} aria-hidden className="h-px" />}
+
+      {!loading && exhausted && devices.length > DEVICE_PAGE_SIZE && (
+        <p className="mt-10 text-center text-sm text-gray-400">
+          That&apos;s all {devices.length} models.
+        </p>
+      )}
     </main>
   );
 }

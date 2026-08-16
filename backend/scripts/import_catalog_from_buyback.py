@@ -37,6 +37,7 @@ from sqlmodel import Session, select
 
 from app.db.session import engine
 from app.models.device import Brand, Device, DeviceCategory
+from app.services.release_year import release_year_for
 from scripts.sync_competitor_prices import storage_gb_from_label
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -280,6 +281,11 @@ def main() -> None:
                                 has_s_pen=has_s_pen,
                                 slug=our_slug(brand, model, gb),
                                 is_active=True,
+                                # RELEASE_YEAR above is real launch-date data
+                                # and always wins; the name-derived guess is
+                                # only for a model this map doesn't cover.
+                                release_year=RELEASE_YEAR.get(bb_slug)
+                                or release_year_for(model),
                             )
                         )
                         created += 1

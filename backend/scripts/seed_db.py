@@ -23,6 +23,7 @@ from sqlmodel import Session, select
 from app.db.session import engine
 from app.models.device import Device
 from app.models.questionnaire import DeductionRule, Question, QuestionSet
+from app.services.release_year import release_year_for
 
 SEED_DIR = Path(__file__).resolve().parent.parent.parent / "seed-data"
 
@@ -43,6 +44,7 @@ def seed_devices(session: Session) -> None:
                 category=entry["category"],
                 has_s_pen=entry.get("has_s_pen", False),
                 slug=entry["slug"],
+                release_year=release_year_for(entry["model"]),
             )
         )
         created += 1

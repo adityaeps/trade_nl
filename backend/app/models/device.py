@@ -30,6 +30,11 @@ class Device(SQLModel, table=True):
     slug: str = Field(unique=True, index=True)
     image_url: str | None = None
     is_active: bool = True
+    # Approximate, derived from the model name by services/release_year.py -
+    # the catalog has no real release date to work from. Sorts the storefront
+    # newest-first; never shown to customers, never used in pricing. Null
+    # means "couldn't tell", and those sort last.
+    release_year: int | None = Field(default=None, index=True)
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc), sa_type=DateTime(timezone=True)
     )

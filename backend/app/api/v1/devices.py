@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
 
 from app.db.session import get_session
@@ -36,15 +36,39 @@ def _to_summary(device: Device, price: Decimal | None) -> DeviceSummary:
 def list_devices(
     brand: Brand | None = None,
     search: str | None = None,
+    limit: int = Query(24, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     session: Session = Depends(get_session),
 ):
-    query = select(Device).where(Device.is_active == True)  # noqa: E712
+    """One page of the catalog, newest models first.
+
+    Paged because the catalog is a few hundred devices and the storefront
+    loads it as the customer scrolls - returning all of them made the first
+    paint wait on every row plus its price.
+
+    Ordered by `release_year` descending (see services/release_year.py) with
+    unknown years last, then model and storage so the sequence is stable
+    between pages - an unstable ORDER BY makes offset paging drop or repeat
+    rows.
+    """
+    query = select(Device, BasePrice.base_price).where(Device.is_active == True)  # noqa: E712
+    # Outer join, not a lookup per device: this endpoint used to run one
+    # extra query for every row returned (N+1), which is most of what made
+    # a full catalog load slow. Devices with no base_price still appear,
+    # with price_up_to null ("price coming soon").
+    query = query.join(BasePrice, BasePrice.device_id == Device.id, isouter=True)
     if brand:
         query = query.where(Device.brand == brand)
     if search:
         query = query.where(Device.model.ilike(f"%{search}%"))
-    devices = session.exec(query.order_by(Device.brand, Device.model, Device.storage_gb)).all()
-    return [_to_summary(d, _price_for(session, d.id)) for d in devices]
+
+    query = query.order_by(
+        Device.release_year.desc().nullslast(),
+        Device.model,
+        Device.storage_gb,
+    )
+    rows = session.exec(query.offset(offset).limit(limit)).all()
+    return [_to_summary(device, price) for device, price in rows]
 
 
 @router.get("/{slug}", response_model=DeviceDetail)
