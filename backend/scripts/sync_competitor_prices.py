@@ -27,14 +27,21 @@ change in these terms rather than working around it.
 
 Etiquette: one request per device with a short delay between them
 (REQUEST_DELAY_SECONDS), a descriptive User-Agent, and no concurrency -
-this is a low-volume, low-frequency job (intended to run daily), not a
-bulk crawl.
+this is a low-volume, low-frequency job (run at most daily), not a bulk
+crawl.
 
-Run manually:
+Nothing runs this automatically. It is triggered either:
 
-    python -m scripts.sync_competitor_prices
+  * from the admin UI - Pricing > "Run price sync", which calls
+    POST /api/v1/admin/price-sync and drives sync_device() through
+    app/services/price_sync_runner.py, or
+  * by hand:
 
-Scheduled via .github/workflows/sync-prices.yml.
+        python -m scripts.sync_competitor_prices [--missing-only]
+
+  * or from the Actions tab via .github/workflows/sync-prices.yml, which
+    is manual-dispatch only (no cron) - the deployed API idles down, so
+    the business chose to run this while someone is watching it.
 """
 
 from __future__ import annotations
@@ -410,7 +417,10 @@ def _extract_buyback_price(payload: dict, client: httpx.Client) -> Decimal | Non
 # --- Sync orchestration ------------------------------------------------------
 
 
-def sync_device(session: Session, client: httpx.Client, device: Device) -> None:
+def sync_device(session: Session, client: httpx.Client, device: Device) -> bool:
+    """Syncs one device. Returns True if a price was written, False if the
+    device was left untouched (no competitor price could be fetched) - the
+    admin-triggered runner reports that count back to the UI."""
     results: list[CompetitorResult] = []
 
     if SWAPPIE_ENABLED:
@@ -431,7 +441,7 @@ def sync_device(session: Session, client: httpx.Client, device: Device) -> None:
             device.model,
             device.storage_gb,
         )
-        return
+        return False
 
     now = datetime.now(timezone.utc)
     for result in results:
@@ -505,6 +515,7 @@ def sync_device(session: Session, client: httpx.Client, device: Device) -> None:
         reference_price,
         ", ".join(r.competitor_name for r in results),
     )
+    return True
 
 
 def main() -> None:

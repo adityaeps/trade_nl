@@ -7,7 +7,7 @@ Frontend and backend deploy **separately**, per ARCHITECTURE.md §3:
 | Database | Neon (free tier) | — |
 | Backend (FastAPI) | Render | `backend/` via `render.yaml` |
 | Frontend (Next.js) | Vercel | `frontend/` |
-| Price sync | GitHub Actions cron | `.github/workflows/sync-prices.yml` |
+| Price sync | Admin UI button (Pricing → "Run price sync"); GitHub Actions manual dispatch as fallback | `.github/workflows/sync-prices.yml` |
 
 Order matters: **Neon → Render → Vercel**. The backend needs the database
 URL, and the frontend needs the backend URL.
@@ -106,8 +106,12 @@ you must redeploy, not just restart.
    > rights caveat in TASKS.md before scaling image handling further.
 
 5. **GitHub Actions secrets** — add `DATABASE_URL`, `JWT_SECRET`,
-   `ENCRYPTION_KEY` under Settings → Secrets → Actions so the nightly price
-   sync can reach Neon directly (§7 — it bypasses the API by design).
+   `ENCRYPTION_KEY` under Settings → Secrets → Actions so the price sync can
+   reach Neon directly (§7 — it bypasses the API by design). The workflow
+   has no schedule: run it from Actions → "Sync competitor prices" → Run
+   workflow. Day to day, staff use the admin UI button instead (Pricing →
+   "Run price sync"); this workflow is the fallback for when the API is
+   down or spun down.
 
 ## Verifying a deploy
 

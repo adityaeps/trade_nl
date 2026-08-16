@@ -1,13 +1,25 @@
 name: Sync competitor prices
 
-# Runs the competitor price sync independent of app uptime (ARCHITECTURE.md
-# §7) - connects directly to the Neon database, not through the FastAPI app.
+# Competitor price sync (ARCHITECTURE.md §7) - connects directly to the Neon
+# database, not through the FastAPI app.
+#
+# MANUAL ONLY. The daily `schedule:` cron (03:17 UTC) was deliberately
+# removed: the deployed API isn't up around the clock, and the business
+# wants the sync run while someone is watching it rather than unattended
+# overnight. Day-to-day it is triggered from the admin UI (Pricing > "Run
+# price sync", which calls POST /api/v1/admin/price-sync). This workflow
+# stays as the fallback path for when the API itself is down or asleep.
+#
+# To re-enable the schedule, restore:
+#   schedule:
+#     - cron: "17 3 * * *"
 on:
-  schedule:
-    # 03:17 UTC daily - off the hour, avoids piling onto :00 with everyone
-    # else's cron jobs.
-    - cron: "17 3 * * *"
-  workflow_dispatch: {} # allows a manual run from the Actions tab
+  workflow_dispatch:
+    inputs:
+      missing_only:
+        description: "Only sync devices that still have no base price"
+        type: boolean
+        default: false
 
 jobs:
   sync:
@@ -29,4 +41,6 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-        run: python -m scripts.sync_competitor_prices
+        run: |
+          python -m scripts.sync_competitor_prices \
+            ${{ inputs.missing_only && '--missing-only' || '' }}

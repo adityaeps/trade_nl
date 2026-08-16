@@ -15,3 +15,6 @@ class StoreOut(BaseModel):
     lng: float
     opening_hours: dict[str, Any]
     is_active: bool
+    # Null when no postal code was supplied, or it couldn't be geocoded -
+    # the store list is still returned, just unsorted (§8).
+    distance_km: float | None = None

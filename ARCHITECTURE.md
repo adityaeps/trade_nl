@@ -35,8 +35,8 @@ a `# TODO(assumption): ...` comment rather than silently deciding.
   `courier` (customer ships the device). Both lead to a device inspection
   step before payout is authorized.
 - **Competitor prices are never fetched live during a customer request.**
-  They're synced on a schedule into the database; customer-facing reads only
-  ever hit our own DB. See §7.
+  They're synced into the database by a separate job that staff start by
+  hand; customer-facing reads only ever hit our own DB. See §7.
 
 ## 3. Tech stack
 
@@ -46,7 +46,7 @@ a `# TODO(assumption): ...` comment rather than silently deciding.
 | Migrations | Alembic | |
 | Frontend | Next.js 14 (App Router), TypeScript, Tailwind CSS | |
 | Database | PostgreSQL (Neon, free tier) | |
-| Scheduled jobs | GitHub Actions (cron schedule) | Runs the competitor price sync independent of app uptime |
+| Background jobs | Admin-triggered thread in the API, plus a manual-dispatch GitHub Actions workflow | Competitor price sync only. No cron: the API isn't up around the clock, and the business wants the sync run while someone is watching it — see §7 |
 | Maps / geocoding | Leaflet.js + OpenStreetMap tiles, Nominatim | Free, no API key needed |
 | Backend hosting | Render (free tier for dev; Starter $7/mo before real customer traffic, to avoid cold-start delays) | |
 | Frontend hosting | Vercel (free tier) | |
@@ -94,13 +94,14 @@ phone-tradein-nl/
 │   │   │           └── payouts.py
 │   │   ├── services/
 │   │   │   ├── pricing_engine.py   # pure functions, no I/O — see §6
-│   │   │   └── geocoding.py        # Nominatim lookup + haversine distance
+│   │   │   ├── geocoding.py        # Nominatim lookup + haversine distance
+│   │   │   └── price_sync_runner.py # admin-triggered sync + its progress (§7)
 │   │   └── db/
 │   │       ├── session.py
 │   │       └── base.py
 │   ├── alembic/
 │   ├── scripts/
-│   │   └── sync_competitor_prices.py   # entrypoint the GitHub Action calls
+│   │   └── sync_competitor_prices.py   # CLI + the admin button's worker (§7)
 │   ├── tests/
 │   ├── requirements.txt
 │   └── .env.example
@@ -319,9 +320,22 @@ place.
 
 ## 7. Competitor price sync (`scripts/sync_competitor_prices.py`)
 
-- Triggered by `.github/workflows/sync-prices.yml` on a daily schedule
-  (`cron`), connecting directly to the Neon database — not routed through
-  the FastAPI app.
+- **Manual trigger only — nothing runs it on a schedule.** The original
+  daily `cron` in `.github/workflows/sync-prices.yml` was removed at the
+  business's request: the API isn't up around the clock, and they want the
+  sync run while someone is watching the result. Two ways to start it:
+  - **Admin UI** (the day-to-day path): Pricing → "Run price sync" →
+    `POST /api/v1/admin/price-sync`, which runs `sync_device()` on a
+    background thread via `app/services/price_sync_runner.py` and reports
+    progress through `GET /api/v1/admin/price-sync`. One run at a time
+    (a second request gets a 409); run state is in-process memory, so it
+    resets on restart and assumes a single API instance.
+  - **GitHub Actions**, `workflow_dispatch` only, connecting directly to
+    the Neon database — the fallback for when the API itself is down or
+    asleep.
+- Each device commits on its own, so a run cut short (instance sleeps,
+  restart, closed laptop) keeps everything it already synced; re-run with
+  `missing_only` to pick up the rest.
 - Writes to both `competitor_prices` (overwrite latest) and `price_history`
   (append), then recomputes and updates `base_prices.base_price` using
   `calculate_reference_price`.
@@ -354,6 +368,8 @@ POST   /admin/auth/login
 GET/POST/PUT/DELETE  /admin/devices
 GET/PUT              /admin/base-prices/{device_id}
 GET                  /admin/competitor-prices          filterable by staleness
+POST                 /admin/price-sync                 start a sync run (409 if one is going)
+GET                  /admin/price-sync                 progress of the current/last run
 GET/POST/PUT/DELETE  /admin/question-sets, /questions, /deduction-rules
 GET                  /admin/quotes                     filter by status
 PATCH                /admin/quotes/{id}/status         e.g. mark "inspected", adjust price
