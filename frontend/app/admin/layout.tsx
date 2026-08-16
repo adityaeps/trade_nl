@@ -10,6 +10,10 @@ const NAV = [
   { href: "/admin/catalog", label: "Catalog" },
   { href: "/admin/pricing", label: "Pricing" },
   { href: "/admin/questions", label: "Questions" },
+  { href: "/admin/orders", label: "Orders" },
+  // Hidden unless the account carries the payouts permission (§5). This is
+  // presentation only - the API enforces it with a 403 regardless.
+  { href: "/admin/payouts", label: "Payouts", requiresPayouts: true },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -17,6 +21,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const isLoginPage = pathname === "/admin/login";
   const [email, setEmail] = useState<string | null>(null);
+  const [canViewPayouts, setCanViewPayouts] = useState(false);
   const [checking, setChecking] = useState(!isLoginPage);
 
   useEffect(() => {
@@ -34,6 +39,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     me()
       .then((u) => {
         setEmail(u.email);
+        setCanViewPayouts(u.can_view_payouts);
         // /admin is a bare entry point with no content of its own - land
         // signed-in users on the catalog. Done here rather than in
         // app/admin/page.tsx so this layout stays the single owner of admin
@@ -68,7 +74,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Link>
 
           <nav className="flex gap-1">
-            {NAV.map((item) => (
+            {NAV.filter((item) => !item.requiresPayouts || canViewPayouts).map((item) => (
               <Link
                 key={item.href}
                 href={item.href}

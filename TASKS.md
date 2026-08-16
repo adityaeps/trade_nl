@@ -229,7 +229,9 @@ Claude Code should resolve on its own.
 - [ ] Manual price-entry admin form (first version) — skipped ahead of this
       per explicit request; also blocked on admin auth (Sprint 6)
 - [x] `scripts/sync_competitor_prices.py`
-- [x] GitHub Actions scheduled workflow (`.github/workflows/sync-prices.yml`)
+- [x] ~~GitHub Actions scheduled workflow~~ → manual-dispatch only
+      (`.github/workflows/sync-prices.yml`)
+- [x] "Run price sync" button in admin → Pricing (2026-08-15)
 
   Built out of §10's suggested order (manual form first) at explicit
   request. ToS + robots.txt for both sites reviewed 2026-08-08 - neither
@@ -258,6 +260,17 @@ Claude Code should resolve on its own.
     `BUYBACK_SLUG_OVERRIDES` covers every device in today's
     `seed-data/devices.json`; new catalog devices need an entry added
     (or matching the naive lowercase-hyphenate fallback) before syncing.
+  - **Schedule dropped (business, 2026-08-15).** The daily `cron` is gone —
+    the API isn't up around the clock, so the sync now runs on demand from
+    the admin UI (Pricing → "Run price sync", `POST /api/v1/admin/price-sync`,
+    background thread + progress polling, one run at a time). The workflow
+    stays as `workflow_dispatch`-only for when the API is down or asleep.
+    Because each device commits on its own, a run cut short keeps what it
+    already synced; the "Only devices with no price" checkbox re-runs just
+    the stragglers. Consequence worth watching: prices are now only as
+    fresh as the last time someone remembered to press the button — the
+    `Synced` column and the staleness filter on
+    `GET /admin/competitor-prices` are the only things surfacing that.
   - Samsung's BuyBack.nl questionnaire uses different option labels than
     iPhone's (e.g. battery "Goed"/"Normaal"/"Zwak" vs. iPhone's "Ja"/"Nee")
     - the picker falls back to "first listed option" (observed to always
@@ -283,7 +296,9 @@ need you — see [DEPLOY.md](./DEPLOY.md) for the step-by-step runbook.
 - [ ] Vercel frontend deployed `[owner: business]` — set Root Directory to
       `frontend` and `NEXT_PUBLIC_API_URL` to the Render URL
 - [ ] GitHub Actions secrets configured for the price-sync workflow
-      `[owner: business]` — `DATABASE_URL`, `JWT_SECRET`, `ENCRYPTION_KEY`
+      `[owner: business]` — `DATABASE_URL`, `JWT_SECRET`, `ENCRYPTION_KEY`.
+      Still worth setting up even though the workflow no longer runs on a
+      schedule: it's the fallback way to sync when the API is asleep.
 
   Prepared and verified locally:
   - `render.yaml` — backend blueprint, Python pinned to 3.12 per §3,

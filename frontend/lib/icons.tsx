@@ -65,6 +65,19 @@ export function SearchIcon({ className = "h-4 w-4" }: IconProps) {
   );
 }
 
+export function RefreshIcon({ className = "h-4 w-4" }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={className}>
+      <path
+        d="M20 11a8 8 0 0 0-14.1-4.6M4 13a8 8 0 0 0 14.1 4.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M20 4.5V10h-5.5M4 19.5V14h5.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function TruckIcon({ className = "h-5 w-5" }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={className}>

@@ -12,7 +12,8 @@ Build progress is tracked in [TASKS.md](./TASKS.md).
 - `backend/` — FastAPI + SQLModel API
 - `frontend/` — Next.js 14 App Router customer + admin UI
 - `seed-data/` — starter device catalog and questionnaire content
-- `.github/workflows/` — scheduled competitor price sync
+- `.github/workflows/` — competitor price sync, manual dispatch only (the
+  everyday trigger is the admin UI button — ARCHITECTURE.md §7)
 
 ## Local development
 
