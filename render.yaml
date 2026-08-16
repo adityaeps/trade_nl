@@ -1,24 +1,17 @@
-# Render Blueprint - backend + database. The frontend deploys to Vercel
-# (ARCHITECTURE.md §3), so it is deliberately absent here.
+# Render Blueprint - backend only. The frontend deploys to Vercel and the
+# database is Neon (ARCHITECTURE.md §3), so both are deliberately absent
+# here.
 #
 # Create from the Render dashboard: New > Blueprint > point at this repo.
 # Secrets marked `sync: false` are NOT stored in git - Render prompts for
 # them on first deploy.
 #
-# DEVIATION from ARCHITECTURE.md §3, decided 2026-08-16: Postgres is
-# Render-managed rather than Neon, so the database and the API live on one
-# provider. Nothing in the app depends on which one - `config.py` normalises
-# the `postgresql://` URL either hands out to `postgresql+psycopg://`.
-databases:
-  - name: tradein-db
-    databaseName: tradein
-    user: tradein
-    plan: free
-    # WARNING: Render's free Postgres instances expire and are DELETED after
-    # a fixed window (check the current term in the dashboard - it has been
-    # 30 days recently). Nothing here backs that up. Move to a paid instance
-    # before there is any real customer or payout data in it.
-
+# History: a Render-managed Postgres was declared here on 2026-08-16 and
+# removed the same day. It was migrated to Neon (EU/Frankfurt) because the
+# free Render tier is deleted on expiry and has no backups, and because
+# NL customer data - payouts.iban, contact details - should sit in the EU.
+# Nothing in the app depends on the provider: config.py normalises whatever
+# `postgresql://` URL it is given to `postgresql+psycopg://`.
 services:
   - type: web
     name: tradein-api
@@ -35,11 +28,9 @@ services:
       - key: PYTHON_VERSION
         value: "3.12.7" # §3 pins 3.12 for deploys; local dev used 3.14
       - key: DATABASE_URL
-        # Wired from the managed instance above - no secret to paste, and it
-        # follows the database if it is ever recreated.
-        fromDatabase:
-          name: tradein-db
-          property: connectionString
+        # Neon connection string (EU/Frankfurt), pasted on first deploy.
+        # Keep `?sslmode=require` on the end - Neon rejects plaintext.
+        sync: false
       - key: ENCRYPTION_KEY
         # MUST stay stable for the life of the database: it decrypts
         # payouts.iban. Rotating it makes every stored IBAN unreadable, so

@@ -45,7 +45,7 @@ a `# TODO(assumption): ...` comment rather than silently deciding.
 | Backend | Python 3.12, FastAPI, SQLModel, Pydantic v2 | One service, modular by domain (not microservices). Pin to 3.12 at deploy time (Render `runtime.txt`); local dev on this machine used 3.14 since 3.12 wasn't installed — no version-specific code was written, `requirements.txt` versions were bumped to releases with 3.14 wheels. Repin to 3.12-compatible versions if the deploy target build fails. |
 | Migrations | Alembic | |
 | Frontend | Next.js 14 (App Router), TypeScript, Tailwind CSS | |
-| Database | PostgreSQL (Render-managed, free tier) | Was Neon; changed 2026-08-16 to keep the database on the same provider as the API. Declared in `render.yaml`, so `DATABASE_URL` is wired in rather than pasted. Free tier expires and has no backups — see DEPLOY.md |
+| Database | PostgreSQL (Neon, free tier, EU/Frankfurt) | Briefly Render-managed on 2026-08-16, migrated to Neon the same day: the free Render tier is deleted on expiry with no backups, and NL customer data belongs in the EU. Free Neon auto-suspends after ~5 min idle, so a cold first request is slow |
 | Background jobs | Admin-triggered thread in the API, plus a manual-dispatch GitHub Actions workflow | Competitor price sync only. No cron: the API isn't up around the clock, and the business wants the sync run while someone is watching it — see §7 |
 | Maps / geocoding | Leaflet.js + OpenStreetMap tiles, Nominatim | Free, no API key needed |
 | Backend hosting | Render (free tier for dev; Starter $7/mo before real customer traffic, to avoid cold-start delays) | |
@@ -382,8 +382,8 @@ PATCH                /admin/payouts/{id}                mark paid
 
 ```
 # backend
-DATABASE_URL=postgresql://...          # local Postgres in dev; wired from
-                                       # render.yaml's tradein-db in deploys
+DATABASE_URL=postgresql://...          # local Postgres in dev; the Neon
+                                       # connection string in deploys
 JWT_SECRET=
 ENCRYPTION_KEY=                        # for IBAN field encryption
 CORS_ORIGINS=http://localhost:3000

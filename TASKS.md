@@ -289,11 +289,14 @@ Code is deploy-ready and pushed to `github.com/adityaeps/trade_nl`. The
 four items below all require signing in to a third-party account, so they
 need you — see [DEPLOY.md](./DEPLOY.md) for the step-by-step runbook.
 
-- [ ] Database provisioned `[owner: business]` — **now Render Postgres, not
-      Neon** (decided 2026-08-16, to keep db and API on one provider).
-      `render.yaml` declares `tradein-db` and wires `DATABASE_URL` in via
-      `fromDatabase`, so there is no connection string to paste. Free tier
-      expires and has no backups — move to paid before real payout data
+- [x] Database provisioned — **Neon, EU/Frankfurt** (2026-08-16). Briefly
+      ran on Render-managed Postgres the same day; migrated off because the
+      free Render tier is deleted on expiry with no backups, and NL customer
+      data belongs in the EU. Schema migrated and catalog loaded: 233
+      devices, 207 base prices, 208 competitor prices, 448 price history,
+      30 questions, 63 deduction rules, 3 stores. `admin_users`, `quotes`
+      and `payouts` deliberately left empty (dev payout IBANs are encrypted
+      with the dev key and would be unreadable in production anyway)
 - [ ] Render backend deployed `[owner: business]` — `render.yaml` blueprint
       is committed; Render prompts for `DATABASE_URL`, `ENCRYPTION_KEY`,
       `CORS_ORIGINS` on first deploy

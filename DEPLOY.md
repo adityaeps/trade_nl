@@ -4,31 +4,31 @@ Frontend and backend deploy **separately**, per ARCHITECTURE.md §3:
 
 | Piece | Host | Deploys from |
 |---|---|---|
-| Database | Render Postgres (free tier) | declared in `render.yaml` |
+| Database | Neon (free tier, EU/Frankfurt) | — |
 | Backend (FastAPI) | Render | `backend/` via `render.yaml` |
 | Frontend (Next.js) | Vercel | `frontend/` |
 | Price sync | Admin UI button (Pricing → "Run price sync"); GitHub Actions manual dispatch as fallback | `.github/workflows/sync-prices.yml` |
 
-Order matters: **Render (db + backend) → Vercel**. The blueprint creates the
-database and the API together; the frontend then needs the backend URL.
+Order matters: **Neon → Render → Vercel**. The backend needs the database
+URL, and the frontend needs the backend URL.
 
 ---
 
-## 1. Database (Render Postgres)
+## 1. Database (Neon)
 
-Decided 2026-08-16: Postgres is **Render-managed**, not Neon — database and
-API on one provider. This is a deviation from ARCHITECTURE.md §3; nothing in
-the app cares, since `app/core/config.py` rewrites `postgresql://` to
-`postgresql+psycopg://` whoever hands out the URL.
+1. Create a project at [neon.tech](https://neon.tech) — region
+   **EU (Frankfurt)**. NL customer data (`payouts.iban`, contact details)
+   belongs in the EU, and it keeps latency low for NL customers.
+2. Copy the **Connection string** from the project dashboard. It looks like:
+   `postgresql://neondb_owner:pass@ep-xxx.eu-central-1.aws.neon.tech/neondb?sslmode=require`
+3. Keep `?sslmode=require` on the end — Neon rejects plaintext connections.
+   No other reformatting needed: `app/core/config.py` rewrites
+   `postgresql://` to `postgresql+psycopg://` itself.
 
-`render.yaml` declares the instance (`tradein-db`) and wires `DATABASE_URL`
-into the API with `fromDatabase`, so **there is no connection string to
-paste** — the blueprint creates both together. Pick region **Frankfurt** so
-NL customer data (`payouts.iban`, contact details) stays in the EU.
-
-> ⚠️ Free Postgres on Render **expires and is deleted** after a fixed window
-> (verify the current term in the dashboard — recently 30 days). Move to a
-> paid instance before any real customer or payout data lands in it.
+> A Render-managed Postgres was used briefly on 2026-08-16 and migrated to
+> Neon the same day: Render's free tier is **deleted on expiry** and has no
+> backups. Neon's free tier auto-suspends after ~5 min idle instead — a cold
+> first request is slow, but nothing is destroyed.
 
 Schema and seed data are **not** applied here — `alembic upgrade head` runs
 in the API's start command on first deploy, and seeding is a one-off, see
@@ -37,11 +37,12 @@ step 4.
 ## 2. Render (backend)
 
 1. **New → Blueprint**, point at this repo. Render reads `render.yaml` and
-   creates `tradein-db` + `tradein-api` together.
-2. It will prompt for the two secrets marked `sync: false`:
+   creates `tradein-api`.
+2. It will prompt for the three secrets marked `sync: false`:
 
    | Variable | Value |
    |---|---|
+   | `DATABASE_URL` | the Neon connection string from step 1 |
    | `ENCRYPTION_KEY` | generate with the command below |
    | `CORS_ORIGINS` | leave blank for now — fill in after step 3 |
 
@@ -94,12 +95,11 @@ you must redeploy, not just restart.
    (`https://trade-nl.vercel.app`), then redeploy. Without this the browser
    blocks every API call and the catalog silently renders empty.
 2. **Seed devices + questionnaire** — one-off. Render's Shell tab is a
-   **paid-plan feature**, so on free you run these from your own machine
-   pointed at the database's *external* connection string (Render dashboard
-   → the database → Info → External Database URL):
+   **paid-plan feature**, so on free you run these from your own machine,
+   pointed at the Neon connection string from step 1:
 
    ```bash
-   cd backend && export DATABASE_URL='<external url>'
+   cd backend && export DATABASE_URL='<neon connection string>'
    .venv/bin/python -m scripts.seed_db
    ```
 
@@ -174,8 +174,9 @@ images, and `/admin/login` should accept your admin user.
 
 - **Vercel** — Deployments tab → previous build → *Promote to Production*. Instant.
 - **Render** — Events tab → *Rollback* to a previous deploy.
-- **Database** — Render's free Postgres tier has **no backups and no
-  point-in-time restore** (that starts on the paid tiers), so there is
-  currently nothing to roll back to. Take a `pg_dump` before anything
-  destructive. A rollback across a migration is also *not* automatic:
-  `alembic downgrade` must be run deliberately.
+- **Database** — Neon keeps point-in-time history and can restore by
+  creating a branch at an earlier timestamp; the free plan's retention
+  window is short (verify the current term in the Neon dashboard), so don't
+  treat it as a backup strategy for real payout data. A rollback across a
+  migration is *not* automatic either: `alembic downgrade` must be run
+  deliberately.
