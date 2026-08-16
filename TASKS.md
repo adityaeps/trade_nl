@@ -289,7 +289,11 @@ Code is deploy-ready and pushed to `github.com/adityaeps/trade_nl`. The
 four items below all require signing in to a third-party account, so they
 need you — see [DEPLOY.md](./DEPLOY.md) for the step-by-step runbook.
 
-- [ ] Neon database provisioned `[owner: business]` — needs a Neon account
+- [ ] Database provisioned `[owner: business]` — **now Render Postgres, not
+      Neon** (decided 2026-08-16, to keep db and API on one provider).
+      `render.yaml` declares `tradein-db` and wires `DATABASE_URL` in via
+      `fromDatabase`, so there is no connection string to paste. Free tier
+      expires and has no backups — move to paid before real payout data
 - [ ] Render backend deployed `[owner: business]` — `render.yaml` blueprint
       is committed; Render prompts for `DATABASE_URL`, `ENCRYPTION_KEY`,
       `CORS_ORIGINS` on first deploy

@@ -45,7 +45,7 @@ a `# TODO(assumption): ...` comment rather than silently deciding.
 | Backend | Python 3.12, FastAPI, SQLModel, Pydantic v2 | One service, modular by domain (not microservices). Pin to 3.12 at deploy time (Render `runtime.txt`); local dev on this machine used 3.14 since 3.12 wasn't installed — no version-specific code was written, `requirements.txt` versions were bumped to releases with 3.14 wheels. Repin to 3.12-compatible versions if the deploy target build fails. |
 | Migrations | Alembic | |
 | Frontend | Next.js 14 (App Router), TypeScript, Tailwind CSS | |
-| Database | PostgreSQL (Neon, free tier) | |
+| Database | PostgreSQL (Render-managed, free tier) | Was Neon; changed 2026-08-16 to keep the database on the same provider as the API. Declared in `render.yaml`, so `DATABASE_URL` is wired in rather than pasted. Free tier expires and has no backups — see DEPLOY.md |
 | Background jobs | Admin-triggered thread in the API, plus a manual-dispatch GitHub Actions workflow | Competitor price sync only. No cron: the API isn't up around the clock, and the business wants the sync run while someone is watching it — see §7 |
 | Maps / geocoding | Leaflet.js + OpenStreetMap tiles, Nominatim | Free, no API key needed |
 | Backend hosting | Render (free tier for dev; Starter $7/mo before real customer traffic, to avoid cold-start delays) | |
@@ -331,7 +331,7 @@ place.
     (a second request gets a 409); run state is in-process memory, so it
     resets on restart and assumes a single API instance.
   - **GitHub Actions**, `workflow_dispatch` only, connecting directly to
-    the Neon database — the fallback for when the API itself is down or
+    the database — the fallback for when the API itself is down or
     asleep.
 - Each device commits on its own, so a run cut short (instance sleeps,
   restart, closed laptop) keeps everything it already synced; re-run with
@@ -382,7 +382,8 @@ PATCH                /admin/payouts/{id}                mark paid
 
 ```
 # backend
-DATABASE_URL=postgresql://...          # Neon connection string
+DATABASE_URL=postgresql://...          # local Postgres in dev; wired from
+                                       # render.yaml's tradein-db in deploys
 JWT_SECRET=
 ENCRYPTION_KEY=                        # for IBAN field encryption
 CORS_ORIGINS=http://localhost:3000
@@ -405,7 +406,7 @@ testable before moving to the next.
 7. **Admin auth + catalog/pricing/question management screens.**
 8. **Competitor price sync** — manual admin form first, then the scripted version + GitHub Actions workflow.
 9. **Payout queue** — admin screen listing pending payouts with CSV export; mark-as-paid action.
-10. **Deploy** — Neon (db) → Render (backend) → Vercel (frontend) → GitHub Actions secrets for the sync job.
+10. **Deploy** — Render (db + backend, one blueprint) → Vercel (frontend) → GitHub Actions secrets for the sync job.
 
 ## 11. Open assumptions to confirm before/while building
 
