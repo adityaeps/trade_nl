@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Tab icon: the same shield-check mark the site header uses
+       (components/Header.tsx -> ShieldIcon on a brand-500 -> brand-700
+       gradient tile), redrawn at 32px with a heavier stroke so it stays
+       legible at 16px. Colors are tailwind.config brand.500 / brand.700 -
+       keep them in step if the palette changes. -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6d5bfa" />
+      <stop offset="1" stop-color="#4c31d6" />
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="url(#tile)" />
+  <g transform="translate(4.4 4.4) scale(0.966)" fill="none" stroke="#fff"
+     stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z" />
+    <path d="M9 12l2 2 4-4.5" />
+  </g>
+</svg>
