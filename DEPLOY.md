@@ -46,7 +46,10 @@ step 4.
    | `CORS_ORIGINS` | leave blank for now — fill in after step 3 |
 
    ```bash
-   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+   # Stdlib only - works in any terminal. A Fernet key is just 32 random
+   # bytes, base64url-encoded; importing cryptography here would need the
+   # project venv, which a plain `python3` on macOS does not have.
+   python3 -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"
    ```
 
    > ⚠️ **`ENCRYPTION_KEY` must never change once real payouts exist.** It
