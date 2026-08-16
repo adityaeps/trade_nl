@@ -90,18 +90,55 @@ you must redeploy, not just restart.
 1. **CORS** — set `CORS_ORIGINS` on Render to the Vercel URL
    (`https://trade-nl.vercel.app`), then redeploy. Without this the browser
    blocks every API call and the catalog silently renders empty.
-2. **Seed the questionnaire** — one-off, from Render's Shell tab:
+2. **Seed devices + questionnaire** — one-off. Render's Shell tab is a
+   **paid-plan feature**, so on free you run these from your own machine
+   pointed at the database's *external* connection string (Render dashboard
+   → the database → Info → External Database URL):
+
    ```bash
-   python -m scripts.seed_db
+   cd backend && export DATABASE_URL='<external url>'
+   .venv/bin/python -m scripts.seed_db
    ```
-   This loads `seed-data/questions.json`. It's idempotent.
-3. **Create an admin user** — see `scripts/create_admin.py`.
-4. **Populate the catalog** — either run the importers from the Render
-   shell, or dump/restore from local:
+
+   Loads `seed-data/devices.json` + `questions.json`, and is idempotent.
+   Note this is only the **11-device seed set**, not the full catalog — see
+   step 4.
+
+3. **Create an admin user** — nothing can log in until this runs:
+
    ```bash
-   python -m scripts.import_catalog_from_buyback
-   python -m scripts.sync_competitor_prices
-   python -m scripts.fetch_device_images   # writes into frontend/public — see caveat below
+   .venv/bin/python -m scripts.create_admin you@example.com --payouts
+   ```
+
+   Prompts for the password on stdin (never argv, never shell history);
+   minimum 12 characters. `--payouts` grants the §5 payouts permission —
+   omit it for general staff.
+
+4. **Populate the full catalog.** The seed set is 11 devices with no
+   prices. The real 233-device catalog came from the importer plus sync
+   runs, so either re-run them against the deployed database (slow — each
+   device is scraped one at a time):
+
+   ```bash
+   .venv/bin/python -m scripts.import_catalog_from_buyback
+   .venv/bin/python -m scripts.sync_competitor_prices
+   ```
+
+   …or copy what a working local database already has, which is faster and
+   produces identical rows:
+
+   ```bash
+   pg_dump "$LOCAL_URL" -t devices -t base_prices -t competitor_prices \
+     -t price_history --data-only | psql "$DATABASE_URL"
+   ```
+
+   Either way, run `unset DATABASE_URL` afterwards or your local work will
+   keep writing to production.
+
+   Device images are separate — `fetch_device_images.py` is a local,
+   commit-the-output step:
+   ```bash
+   .venv/bin/python -m scripts.fetch_device_images   # see caveat below
    ```
 
    > `fetch_device_images.py` writes files into `frontend/public/devices/`,
