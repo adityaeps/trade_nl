@@ -8,6 +8,7 @@ import {
   type AdminDevice,
 } from "@/lib/adminApi";
 import { SearchIcon } from "@/lib/icons";
+import { useDebouncedValue } from "@/lib/useDebouncedValue";
 
 const BRANDS = [
   { value: "", label: "All" },
@@ -19,17 +20,18 @@ export default function AdminCatalogPage() {
   const [devices, setDevices] = useState<AdminDevice[]>([]);
   const [brand, setBrand] = useState("");
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
-    listDevices({ brand: brand || undefined, search: search || undefined })
+    listDevices({ brand: brand || undefined, search: debouncedSearch || undefined })
       .then(setDevices)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [brand, search]);
+  }, [brand, debouncedSearch]);
 
   useEffect(load, [load]);
 
@@ -142,6 +144,8 @@ export default function AdminCatalogPage() {
                         <img
                           src={d.image_url}
                           alt=""
+                          loading="lazy"
+                          decoding="async"
                           className="h-9 w-9 shrink-0 rounded-lg object-contain"
                         />
                       ) : (

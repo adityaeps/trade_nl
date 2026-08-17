@@ -4,7 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 
 from app.core.deps import get_current_admin
 from app.db.session import get_session
@@ -40,10 +40,9 @@ class QuoteStatusUpdate(BaseModel):
     calculated_price: Decimal | None = None
 
 
-def _to_out(session: Session, quote: Quote) -> AdminQuoteOut:
-    device = session.get(Device, quote.device_id)
-    store = session.get(Store, quote.store_id) if quote.store_id else None
-    payout = session.exec(select(Payout).where(Payout.quote_id == quote.id)).first()
+def _to_out(
+    quote: Quote, device: Device | None, store: Store | None, has_payout: bool
+) -> AdminQuoteOut:
     return AdminQuoteOut(
         id=quote.id,
         status=quote.status,
@@ -59,7 +58,7 @@ def _to_out(session: Session, quote: Quote) -> AdminQuoteOut:
         customer_phone=quote.customer_phone,
         valid_until=quote.valid_until,
         created_at=quote.created_at,
-        has_payout=payout is not None,
+        has_payout=has_payout,
     )
 
 
@@ -74,7 +73,31 @@ def list_quotes(
     if status:
         query = query.where(Quote.status == status)
     quotes = session.exec(query.order_by(Quote.created_at.desc()).limit(limit)).all()
-    return [_to_out(session, q) for q in quotes]
+    if not quotes:
+        return []
+
+    # Three bulk lookups instead of three queries per quote (device, store,
+    # payout) - a full order list used to be ~1 + 3*limit round trips.
+    device_ids = {q.device_id for q in quotes}
+    store_ids = {q.store_id for q in quotes if q.store_id}
+    quote_ids = [q.id for q in quotes]
+
+    devices = {
+        d.id: d for d in session.exec(select(Device).where(Device.id.in_(device_ids))).all()
+    }
+    stores = (
+        {s.id: s for s in session.exec(select(Store).where(Store.id.in_(store_ids))).all()}
+        if store_ids
+        else {}
+    )
+    paid_quote_ids = set(
+        session.exec(select(Payout.quote_id).where(Payout.quote_id.in_(quote_ids))).all()
+    )
+
+    return [
+        _to_out(q, devices.get(q.device_id), stores.get(q.store_id), q.id in paid_quote_ids)
+        for q in quotes
+    ]
 
 
 @router.get("/status-counts")
@@ -83,11 +106,13 @@ def status_counts(
 ):
     """Counts per status, so the orders screen can show filter badges
     without pulling every quote."""
-    quotes = session.exec(select(Quote)).all()
+    rows = session.exec(
+        select(Quote.status, func.count()).group_by(Quote.status)
+    ).all()
     counts = {s.value: 0 for s in QuoteStatus}
-    for q in quotes:
-        counts[q.status.value if hasattr(q.status, "value") else q.status] += 1
-    return {"total": len(quotes), "by_status": counts}
+    for status_value, n in rows:
+        counts[status_value.value if hasattr(status_value, "value") else status_value] = n
+    return {"total": sum(counts.values()), "by_status": counts}
 
 
 # Which status transitions staff may make by hand. Deliberately restrictive:
@@ -144,4 +169,10 @@ def update_quote_status(
     session.add(quote)
     session.commit()
     session.refresh(quote)
-    return _to_out(session, quote)
+
+    device = session.get(Device, quote.device_id)
+    store = session.get(Store, quote.store_id) if quote.store_id else None
+    has_payout = (
+        session.exec(select(Payout.id).where(Payout.quote_id == quote.id)).first() is not None
+    )
+    return _to_out(quote, device, store, has_payout)

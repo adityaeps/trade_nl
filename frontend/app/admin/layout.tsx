@@ -24,6 +24,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [canViewPayouts, setCanViewPayouts] = useState(false);
   const [checking, setChecking] = useState(!isLoginPage);
 
+  // Verifies the session and loads the signed-in admin's info. Keyed on
+  // isLoginPage rather than pathname: this used to re-run on every
+  // navigation between /admin/catalog, /admin/pricing, etc (pathname
+  // changes on each), which re-fetched GET /auth/me and - because
+  // `checking` blanks the whole shell below - flashed the entire admin
+  // panel to a spinner on every single nav-link click. It only needs to
+  // run once per session (mount) and again if the login/logged-in state
+  // flips, e.g. router.push("/admin/catalog") straight after login.
   useEffect(() => {
     if (isLoginPage) {
       setChecking(false);
@@ -40,15 +48,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       .then((u) => {
         setEmail(u.email);
         setCanViewPayouts(u.can_view_payouts);
-        // /admin is a bare entry point with no content of its own - land
-        // signed-in users on the catalog. Done here rather than in
-        // app/admin/page.tsx so this layout stays the single owner of admin
-        // routing; two components calling router.replace() raced and crashed.
-        if (pathname === "/admin") router.replace("/admin/catalog");
       })
       .catch(() => router.replace("/admin/login"))
       .finally(() => setChecking(false));
-  }, [isLoginPage, pathname, router]);
+  }, [isLoginPage, router]);
+
+  // Bare `/admin` is a link people bookmark or type with no content of its
+  // own - bounce it to the catalog. Kept separate from the session check
+  // above (reads the already-fetched `checking` state rather than causing
+  // one) so visiting it doesn't force a re-check of the session, and stays
+  // the single owner of this redirect - see app/admin/page.tsx, where two
+  // components both calling router.replace() raced and crashed.
+  useEffect(() => {
+    if (pathname === "/admin" && !checking && getToken()) {
+      router.replace("/admin/catalog");
+    }
+  }, [pathname, checking, router]);
 
   if (isLoginPage) return <>{children}</>;
 

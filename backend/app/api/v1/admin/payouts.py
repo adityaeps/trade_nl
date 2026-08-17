@@ -34,8 +34,7 @@ class MarkPaidRequest(BaseModel):
     status: PayoutStatus = PayoutStatus.paid
 
 
-def _to_out(session: Session, payout: Payout) -> PayoutOut:
-    quote = session.get(Quote, payout.quote_id)
+def _to_out(payout: Payout, quote: Quote | None) -> PayoutOut:
     return PayoutOut(
         id=payout.id,
         quote_id=str(payout.quote_id),
@@ -64,7 +63,13 @@ def list_payouts(
     if status:
         query = query.where(Payout.status == status)
     payouts = session.exec(query.order_by(Payout.created_at.desc()).limit(limit)).all()
-    return [_to_out(session, p) for p in payouts]
+    if not payouts:
+        return []
+
+    # One bulk lookup instead of one Quote query per payout.
+    quote_ids = {p.quote_id for p in payouts}
+    quotes = {q.id: q for q in session.exec(select(Quote).where(Quote.id.in_(quote_ids))).all()}
+    return [_to_out(p, quotes.get(p.quote_id)) for p in payouts]
 
 
 @router.get("/export.csv")
@@ -126,10 +131,11 @@ def mark_paid(
         raise HTTPException(status_code=404, detail="Payout not found")
 
     current = payout.status.value if hasattr(payout.status, "value") else payout.status
+    quote = session.get(Quote, payout.quote_id)
     if current == PayoutStatus.paid.value and payload.status == PayoutStatus.paid:
         # Not an error, but don't silently rewrite paid_at - the original
         # timestamp is the audit trail for a transfer that already happened.
-        return _to_out(session, payout)
+        return _to_out(payout, quote)
 
     payout.status = payload.status
     payout.paid_at = (
@@ -138,4 +144,4 @@ def mark_paid(
     session.add(payout)
     session.commit()
     session.refresh(payout)
-    return _to_out(session, payout)
+    return _to_out(payout, quote)
