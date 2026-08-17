@@ -58,8 +58,7 @@ class BasePriceUpdate(BaseModel):
     liquidity_tier: LiquidityTier
 
 
-def _to_out(session: Session, device: Device) -> AdminDeviceOut:
-    bp = session.exec(select(BasePrice).where(BasePrice.device_id == device.id)).first()
+def _to_out(device: Device, bp: BasePrice | None) -> AdminDeviceOut:
     return AdminDeviceOut(
         id=device.id,
         brand=device.brand,
@@ -78,6 +77,10 @@ def _to_out(session: Session, device: Device) -> AdminDeviceOut:
     )
 
 
+def _get_base_price(session: Session, device_id: UUID) -> BasePrice | None:
+    return session.exec(select(BasePrice).where(BasePrice.device_id == device_id)).first()
+
+
 @router.get("", response_model=list[AdminDeviceOut])
 def list_devices(
     brand: Brand | None = None,
@@ -86,15 +89,21 @@ def list_devices(
     session: Session = Depends(get_session),
     _: AdminUser = Depends(get_current_admin),
 ):
-    query = select(Device)
+    # One outer join, not one query per device. This used to run a separate
+    # BasePrice lookup for every row - fine for the 11-device seed set, but
+    # the real catalog is ~230 devices, so opening the Catalog or Pricing
+    # page meant 230+ sequential round trips before anything rendered.
+    query = select(Device, BasePrice).join(
+        BasePrice, BasePrice.device_id == Device.id, isouter=True
+    )
     if brand:
         query = query.where(Device.brand == brand)
     if search:
         query = query.where(Device.model.ilike(f"%{search}%"))
     if not include_inactive:
         query = query.where(Device.is_active == True)  # noqa: E712
-    devices = session.exec(query.order_by(Device.brand, Device.model, Device.storage_gb)).all()
-    return [_to_out(session, d) for d in devices]
+    rows = session.exec(query.order_by(Device.brand, Device.model, Device.storage_gb)).all()
+    return [_to_out(d, bp) for d, bp in rows]
 
 
 @router.post("", response_model=AdminDeviceOut, status_code=201)
@@ -109,7 +118,7 @@ def create_device(
     session.add(device)
     session.commit()
     session.refresh(device)
-    return _to_out(session, device)
+    return _to_out(device, None)
 
 
 @router.put("/{device_id}", response_model=AdminDeviceOut)
@@ -127,7 +136,7 @@ def update_device(
     session.add(device)
     session.commit()
     session.refresh(device)
-    return _to_out(session, device)
+    return _to_out(device, _get_base_price(session, device.id))
 
 
 @router.delete("/{device_id}", status_code=204)
@@ -159,7 +168,7 @@ def upsert_base_price(
     if payload.base_price < 0:
         raise HTTPException(status_code=422, detail="base_price cannot be negative")
 
-    bp = session.exec(select(BasePrice).where(BasePrice.device_id == device_id)).first()
+    bp = _get_base_price(session, device_id)
     if bp:
         bp.base_price = payload.base_price
         bp.markup_pct = payload.markup_pct
@@ -174,4 +183,4 @@ def upsert_base_price(
     session.add(bp)
     session.commit()
     session.refresh(device)
-    return _to_out(session, device)
+    return _to_out(device, bp)

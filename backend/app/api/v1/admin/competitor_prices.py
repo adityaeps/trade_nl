@@ -78,8 +78,7 @@ class CompetitorPriceIn(BaseModel):
         return v
 
 
-def _to_out(session: Session, cp: CompetitorPrice) -> CompetitorPriceOut:
-    device = session.get(Device, cp.device_id)
+def _to_out(cp: CompetitorPrice, device: Device | None) -> CompetitorPriceOut:
     checked = cp.checked_at
     if checked.tzinfo is None:
         checked = checked.replace(tzinfo=timezone.utc)
@@ -114,7 +113,13 @@ def list_competitor_prices(
         query = query.where(CompetitorPrice.device_id == device_id)
     rows = session.exec(query.order_by(CompetitorPrice.checked_at)).all()
 
-    out = [_to_out(session, cp) for cp in rows]
+    # One bulk lookup instead of one Device query per row.
+    device_ids = {r.device_id for r in rows}
+    devices = {
+        d.id: d for d in session.exec(select(Device).where(Device.id.in_(device_ids))).all()
+    } if device_ids else {}
+
+    out = [_to_out(cp, devices.get(cp.device_id)) for cp in rows]
     if stale_after_days is not None:
         out = [o for o in out if o.age_days >= stale_after_days]
     return out[:limit]
@@ -193,7 +198,7 @@ def upsert_competitor_price(
 
     session.commit()
     session.refresh(row)
-    return _to_out(session, row)
+    return _to_out(row, device)
 
 
 @router.delete("/{price_id}", status_code=204)

@@ -11,6 +11,7 @@ import {
   type PriceSyncStatus,
 } from "@/lib/adminApi";
 import { AlertTriangleIcon, RefreshIcon, SearchIcon } from "@/lib/icons";
+import { useDebouncedValue } from "@/lib/useDebouncedValue";
 
 const TIERS = ["high", "medium", "low"];
 
@@ -273,6 +274,7 @@ function PriceSyncPanel({ onFinished }: { onFinished: () => void }) {
 export default function AdminPricingPage() {
   const [devices, setDevices] = useState<AdminDevice[]>([]);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   // Bumped when a sync finishes, and folded into each row's key so the rows
@@ -286,7 +288,7 @@ export default function AdminPricingPage() {
   const load = useCallback(
     (remountRows = false) => {
       setLoading(true);
-      listDevices({ search: search || undefined })
+      listDevices({ search: debouncedSearch || undefined })
         .then((rows) => {
           setDevices(rows);
           if (remountRows) setSyncKey((k) => k + 1);
@@ -294,7 +296,7 @@ export default function AdminPricingPage() {
         .catch((e) => setError(e.message))
         .finally(() => setLoading(false));
     },
-    [search]
+    [debouncedSearch]
   );
 
   useEffect(() => {
