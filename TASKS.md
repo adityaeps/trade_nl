@@ -319,3 +319,57 @@ need you — see [DEPLOY.md](./DEPLOY.md) for the step-by-step runbook.
     reaching for psycopg2, which isn't installed.
   - Production build passes (`next build`), which caught a TypeScript
     error `next dev` had been hiding, and a missing `/admin` index route.
+
+## Sprint 10 — Full test pass + deduction-type fix
+
+- [x] Backend integration test suite (2026-08-19) — `backend/tests/`
+  gained 92 pytest tests across 10 files (`test_api_devices.py`,
+  `test_api_quotes.py`, `test_api_stores.py`, `test_api_admin_*.py` x6),
+  hitting every FastAPI endpoint via TestClient against a real local
+  Postgres DB. Previously zero endpoint-level coverage - all prior tests
+  were pure-function unit tests. Full suite: 164/164 passing. Isolation
+  via a `db_session` fixture (nested transaction/SAVEPOINT, always rolled
+  back) plus a `_pytest_` name-prefix convention as a second safety net -
+  see `conftest.py`. No real product bugs found; one test-infra gotcha
+  noted (`QuestionSet` lookup has no DB uniqueness constraint or query
+  ordering on `(category, brand)` - test-only sets use the unused
+  `tablet` category to avoid colliding with real seeded sets).
+
+- [x] Full E2E pass, both browser-driven against the local dev stack:
+  customer journey (catalog scroll-paging → device detail → branching
+  questionnaire → quote → confirm with store pickup) and admin journey
+  (login → Orders status lifecycle confirmed→inspected→paid → Payouts
+  reveal/mark-paid/CSV export → Questions → Pricing). All correct; test
+  data created during the pass was cleaned up afterward. Read-only smoke
+  check of the deployed Render/Vercel/Neon stack also passed (health,
+  CORS, catalog data, admin-login rejects bad creds).
+
+- [x] **Fixed: `deduction_type` was 100% `fixed` across all 63 seeded
+  deduction rules** (2026-08-19, prompted by a direct question during the
+  test pass: "why are deductions fixed instead of dynamic per device?").
+  `services/pricing_engine.py` already supported `percentage` (scales
+  with each device's own `base_price`) alongside `fixed` (flat euros) -
+  nothing to fix in the engine. But every rule in `seed-data/questions.json`
+  used `fixed`, so e.g. a broken screen was -€50 whether the device was a
+  €25 Galaxy A11 (wiped out entirely, floored at €0) or a €900 iPhone 17
+  Pro Max (a rounding error). Converted all 54 non-disqualifying rules to
+  `percentage`, computed per-brand against each brand's median
+  `base_price` at conversion time (apple=€389, samsung=€189) so relative
+  severity ranking is preserved (broken screen stays the largest
+  deduction everywhere) - amounts themselves are still unvalidated
+  placeholders per the existing `flag_for_business_review` note, this
+  only changes *how* each amount scales with device value, not whether
+  the amounts are right. Disqualifying rules (SIM-lock, water damage,
+  etc.) are untouched - their `deduction_value` is never read.
+  Applied to `seed-data/questions.json` (so a fresh seed gets it right)
+  and directly to both the local dev DB and Neon production (already-
+  seeded rows aren't touched by editing the JSON alone). Verified via a
+  real quote end-to-end (base €360, screen=heavily_used 26% + battery=weak
+  13% → €219.60, matching `base_price * (1 - .26 - .13)` exactly) and live
+  on production via a reversible marker-row test. Admin → Questions
+  already has a working €/% selector per rule - no frontend change needed.
+  Judgment call flagged, not resolved: repair-cost issues (screen,
+  housing, water) probably shouldn't scale with device value the same
+  way risk/value-adjustment issues (SIM-lock, battery, missing S-Pen)
+  should - see the resolved note appended to `seed-data/questions.json`'s
+  own `open_questions` list for the full reasoning.

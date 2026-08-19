@@ -1,11 +1,19 @@
 {
-  "note": "Real questionnaire content provided by the business, structured to match the ARCHITECTURE.md schema (see §5 questions/deduction_rules, §6 pricing engine). Deduction amounts are still illustrative placeholders layered onto the real question structure — see 'flag_for_business_review' on individual rules. Two open items are called out at the bottom under open_questions; resolve those before this goes live.",
-
+  "note": "Real questionnaire content provided by the business, structured to match the ARCHITECTURE.md schema (see \u00a75 questions/deduction_rules, \u00a76 pricing engine). Deduction amounts are still illustrative placeholders layered onto the real question structure \u2014 see 'flag_for_business_review' on individual rules. Two open items are called out at the bottom under open_questions; resolve those before this goes live.",
   "question_sets": [
-    { "local_id": "iphone_qs", "category": "phone", "brand": "apple", "name": "iPhone condition questionnaire" },
-    { "local_id": "samsung_qs", "category": "phone", "brand": "samsung", "name": "Samsung condition questionnaire" }
+    {
+      "local_id": "iphone_qs",
+      "category": "phone",
+      "brand": "apple",
+      "name": "iPhone condition questionnaire"
+    },
+    {
+      "local_id": "samsung_qs",
+      "category": "phone",
+      "brand": "samsung",
+      "name": "Samsung condition questionnaire"
+    }
   ],
-
   "iphone_questions": [
     {
       "local_id": "storage_capacity",
@@ -14,10 +22,16 @@
       "type": "device_selector",
       "display_order": 1,
       "options": [
-        { "label": "256GB", "value": "256" },
-        { "label": "512GB", "value": "512" }
+        {
+          "label": "256GB",
+          "value": "256"
+        },
+        {
+          "label": "512GB",
+          "value": "512"
+        }
       ],
-      "note": "Not a deduction question — this selects which device row (and base_price) the rest of the quote is calculated against. See ARCHITECTURE.md §6."
+      "note": "Not a deduction question \u2014 this selects which device row (and base_price) the rest of the quote is calculated against. See ARCHITECTURE.md \u00a76."
     },
     {
       "local_id": "overall_functional",
@@ -26,11 +40,21 @@
       "type": "boolean",
       "display_order": 2,
       "options": [
-        { "label": "Yes", "value": "yes" },
-        { "label": "No", "value": "no" }
+        {
+          "label": "Yes",
+          "value": "yes"
+        },
+        {
+          "label": "No",
+          "value": "no"
+        }
       ],
       "deduction_rules": [
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0 }
+        {
+          "option_value": "yes",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        }
       ],
       "note": "If 'no', show the per-function checklist below (all depends_on this question = 'no')."
     },
@@ -41,14 +65,30 @@
       "type": "boolean",
       "display_order": 3,
       "options": [
-        { "label": "No", "value": "no" },
-        { "label": "Yes", "value": "yes" }
+        {
+          "label": "No",
+          "value": "no"
+        },
+        {
+          "label": "Yes",
+          "value": "yes"
+        }
       ],
       "deduction_rules": [
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0, "is_disqualifying": true, "disqualify_status": "rejected" }
+        {
+          "option_value": "no",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "yes",
+          "deduction_type": "fixed",
+          "deduction_value": 0,
+          "is_disqualifying": true,
+          "disqualify_status": "rejected"
+        }
       ],
-      "note": "Hard exclusion per business rule ('we do not buy devices with SIM-lock'). No price shown at all — see ARCHITECTURE.md §6."
+      "note": "Hard exclusion per business rule ('we do not buy devices with SIM-lock'). No price shown at all \u2014 see ARCHITECTURE.md \u00a76."
     },
     {
       "local_id": "water_damage",
@@ -57,14 +97,30 @@
       "type": "boolean",
       "display_order": 4,
       "options": [
-        { "label": "No", "value": "no" },
-        { "label": "Yes", "value": "yes" }
+        {
+          "label": "No",
+          "value": "no"
+        },
+        {
+          "label": "Yes",
+          "value": "yes"
+        }
       ],
       "deduction_rules": [
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0, "is_disqualifying": true, "disqualify_status": "manual_review" }
+        {
+          "option_value": "no",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "yes",
+          "deduction_type": "fixed",
+          "deduction_value": 0,
+          "is_disqualifying": true,
+          "disqualify_status": "manual_review"
+        }
       ],
-      "note": "Routed to manual review rather than a hard rejection, since severity varies — matches how BuyBack.nl/Swappie handle it (revised offer after physical inspection)."
+      "note": "Routed to manual review rather than a hard rejection, since severity varies \u2014 matches how BuyBack.nl/Swappie handle it (revised offer after physical inspection)."
     },
     {
       "local_id": "face_id_working",
@@ -72,11 +128,32 @@
       "text": "Does Face ID (or Touch ID) unlocking work?",
       "type": "boolean",
       "display_order": 5,
-      "depends_on": { "question": "overall_functional", "value": "no" },
-      "options": [{ "label": "Yes", "value": "yes" }, { "label": "No", "value": "no" }],
+      "depends_on": {
+        "question": "overall_functional",
+        "value": "no"
+      },
+      "options": [
+        {
+          "label": "Yes",
+          "value": "yes"
+        },
+        {
+          "label": "No",
+          "value": "no"
+        }
+      ],
       "deduction_rules": [
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 30, "flag_for_business_review": true }
+        {
+          "option_value": "yes",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "no",
+          "deduction_type": "percentage",
+          "deduction_value": 8,
+          "flag_for_business_review": true
+        }
       ]
     },
     {
@@ -85,13 +162,35 @@
       "text": "Does the device power on?",
       "type": "boolean",
       "display_order": 6,
-      "depends_on": { "question": "overall_functional", "value": "no" },
-      "options": [{ "label": "Yes", "value": "yes" }, { "label": "No", "value": "no" }],
-      "deduction_rules": [
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 0, "is_disqualifying": true, "disqualify_status": "manual_review" }
+      "depends_on": {
+        "question": "overall_functional",
+        "value": "no"
+      },
+      "options": [
+        {
+          "label": "Yes",
+          "value": "yes"
+        },
+        {
+          "label": "No",
+          "value": "no"
+        }
       ],
-      "note": "A device that won't power on at all isn't reliably assessable through a self-report questionnaire — routed to manual review rather than a fixed deduction."
+      "deduction_rules": [
+        {
+          "option_value": "yes",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "no",
+          "deduction_type": "fixed",
+          "deduction_value": 0,
+          "is_disqualifying": true,
+          "disqualify_status": "manual_review"
+        }
+      ],
+      "note": "A device that won't power on at all isn't reliably assessable through a self-report questionnaire \u2014 routed to manual review rather than a fixed deduction."
     },
     {
       "local_id": "charges_normally",
@@ -99,11 +198,32 @@
       "text": "Does the device charge normally?",
       "type": "boolean",
       "display_order": 7,
-      "depends_on": { "question": "overall_functional", "value": "no" },
-      "options": [{ "label": "Yes", "value": "yes" }, { "label": "No", "value": "no" }],
+      "depends_on": {
+        "question": "overall_functional",
+        "value": "no"
+      },
+      "options": [
+        {
+          "label": "Yes",
+          "value": "yes"
+        },
+        {
+          "label": "No",
+          "value": "no"
+        }
+      ],
       "deduction_rules": [
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 40, "flag_for_business_review": true }
+        {
+          "option_value": "yes",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "no",
+          "deduction_type": "percentage",
+          "deduction_value": 10,
+          "flag_for_business_review": true
+        }
       ]
     },
     {
@@ -112,11 +232,32 @@
       "text": "Does sound playback work (speaker and ear speaker)?",
       "type": "boolean",
       "display_order": 8,
-      "depends_on": { "question": "overall_functional", "value": "no" },
-      "options": [{ "label": "Yes", "value": "yes" }, { "label": "No", "value": "no" }],
+      "depends_on": {
+        "question": "overall_functional",
+        "value": "no"
+      },
+      "options": [
+        {
+          "label": "Yes",
+          "value": "yes"
+        },
+        {
+          "label": "No",
+          "value": "no"
+        }
+      ],
       "deduction_rules": [
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 20, "flag_for_business_review": true }
+        {
+          "option_value": "yes",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "no",
+          "deduction_type": "percentage",
+          "deduction_value": 5,
+          "flag_for_business_review": true
+        }
       ]
     },
     {
@@ -125,11 +266,32 @@
       "text": "Do the cameras work?",
       "type": "boolean",
       "display_order": 9,
-      "depends_on": { "question": "overall_functional", "value": "no" },
-      "options": [{ "label": "Yes", "value": "yes" }, { "label": "No", "value": "no" }],
+      "depends_on": {
+        "question": "overall_functional",
+        "value": "no"
+      },
+      "options": [
+        {
+          "label": "Yes",
+          "value": "yes"
+        },
+        {
+          "label": "No",
+          "value": "no"
+        }
+      ],
       "deduction_rules": [
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 40, "flag_for_business_review": true }
+        {
+          "option_value": "yes",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "no",
+          "deduction_type": "percentage",
+          "deduction_value": 10,
+          "flag_for_business_review": true
+        }
       ]
     },
     {
@@ -138,11 +300,32 @@
       "text": "Does the flashlight work?",
       "type": "boolean",
       "display_order": 10,
-      "depends_on": { "question": "overall_functional", "value": "no" },
-      "options": [{ "label": "Yes", "value": "yes" }, { "label": "No", "value": "no" }],
+      "depends_on": {
+        "question": "overall_functional",
+        "value": "no"
+      },
+      "options": [
+        {
+          "label": "Yes",
+          "value": "yes"
+        },
+        {
+          "label": "No",
+          "value": "no"
+        }
+      ],
       "deduction_rules": [
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 10, "flag_for_business_review": true }
+        {
+          "option_value": "yes",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "no",
+          "deduction_type": "percentage",
+          "deduction_value": 3,
+          "flag_for_business_review": true
+        }
       ]
     },
     {
@@ -151,11 +334,32 @@
       "text": "Do all buttons work?",
       "type": "boolean",
       "display_order": 11,
-      "depends_on": { "question": "overall_functional", "value": "no" },
-      "options": [{ "label": "Yes", "value": "yes" }, { "label": "No", "value": "no" }],
+      "depends_on": {
+        "question": "overall_functional",
+        "value": "no"
+      },
+      "options": [
+        {
+          "label": "Yes",
+          "value": "yes"
+        },
+        {
+          "label": "No",
+          "value": "no"
+        }
+      ],
       "deduction_rules": [
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 15, "flag_for_business_review": true }
+        {
+          "option_value": "yes",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "no",
+          "deduction_type": "percentage",
+          "deduction_value": 4,
+          "flag_for_business_review": true
+        }
       ]
     },
     {
@@ -164,11 +368,32 @@
       "text": "Does the vibration motor work?",
       "type": "boolean",
       "display_order": 12,
-      "depends_on": { "question": "overall_functional", "value": "no" },
-      "options": [{ "label": "Yes", "value": "yes" }, { "label": "No", "value": "no" }],
+      "depends_on": {
+        "question": "overall_functional",
+        "value": "no"
+      },
+      "options": [
+        {
+          "label": "Yes",
+          "value": "yes"
+        },
+        {
+          "label": "No",
+          "value": "no"
+        }
+      ],
       "deduction_rules": [
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 10, "flag_for_business_review": true }
+        {
+          "option_value": "yes",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "no",
+          "deduction_type": "percentage",
+          "deduction_value": 3,
+          "flag_for_business_review": true
+        }
       ]
     },
     {
@@ -178,18 +403,50 @@
       "type": "single_select",
       "display_order": 13,
       "options": [
-        { "label": "As new — no scratches or damage", "value": "as_new" },
-        { "label": "Lightly used — minor superficial scratches", "value": "lightly_used" },
-        { "label": "Heavily used — clearly visible, deeper scratches", "value": "heavily_used" },
-        { "label": "Broken — cracked, shattered, non-original, discolored, or not working", "value": "broken" }
+        {
+          "label": "As new \u2014 no scratches or damage",
+          "value": "as_new"
+        },
+        {
+          "label": "Lightly used \u2014 minor superficial scratches",
+          "value": "lightly_used"
+        },
+        {
+          "label": "Heavily used \u2014 clearly visible, deeper scratches",
+          "value": "heavily_used"
+        },
+        {
+          "label": "Broken \u2014 cracked, shattered, non-original, discolored, or not working",
+          "value": "broken"
+        }
       ],
       "deduction_rules": [
-        { "option_value": "as_new", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "lightly_used", "deduction_type": "fixed", "deduction_value": 15, "flag_for_business_review": true },
-        { "option_value": "heavily_used", "deduction_type": "fixed", "deduction_value": 50, "flag_for_business_review": true },
-        { "option_value": "broken", "deduction_type": "fixed", "deduction_value": 0, "is_disqualifying": true, "disqualify_status": "manual_review" }
+        {
+          "option_value": "as_new",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "lightly_used",
+          "deduction_type": "percentage",
+          "deduction_value": 4,
+          "flag_for_business_review": true
+        },
+        {
+          "option_value": "heavily_used",
+          "deduction_type": "percentage",
+          "deduction_value": 13,
+          "flag_for_business_review": true
+        },
+        {
+          "option_value": "broken",
+          "deduction_type": "fixed",
+          "deduction_value": 0,
+          "is_disqualifying": true,
+          "disqualify_status": "manual_review"
+        }
       ],
-      "note": "'Broken' covers too wide a range (hairline crack vs. shattered vs. non-original replacement screen) for a single fixed deduction — routed to manual review."
+      "note": "'Broken' covers too wide a range (hairline crack vs. shattered vs. non-original replacement screen) for a single fixed deduction \u2014 routed to manual review."
     },
     {
       "local_id": "housing_condition",
@@ -198,16 +455,48 @@
       "type": "single_select",
       "display_order": 14,
       "options": [
-        { "label": "As new — perfect condition, no scratches", "value": "as_new" },
-        { "label": "Lightly used — a few small scratches, no dents", "value": "lightly_used" },
-        { "label": "Heavily used — visible scratches and/or minor dents", "value": "heavily_used" },
-        { "label": "Broken — cracked, dented, heavily discolored, or bent", "value": "broken" }
+        {
+          "label": "As new \u2014 perfect condition, no scratches",
+          "value": "as_new"
+        },
+        {
+          "label": "Lightly used \u2014 a few small scratches, no dents",
+          "value": "lightly_used"
+        },
+        {
+          "label": "Heavily used \u2014 visible scratches and/or minor dents",
+          "value": "heavily_used"
+        },
+        {
+          "label": "Broken \u2014 cracked, dented, heavily discolored, or bent",
+          "value": "broken"
+        }
       ],
       "deduction_rules": [
-        { "option_value": "as_new", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "lightly_used", "deduction_type": "fixed", "deduction_value": 10, "flag_for_business_review": true },
-        { "option_value": "heavily_used", "deduction_type": "fixed", "deduction_value": 30, "flag_for_business_review": true },
-        { "option_value": "broken", "deduction_type": "fixed", "deduction_value": 0, "is_disqualifying": true, "disqualify_status": "manual_review" }
+        {
+          "option_value": "as_new",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "lightly_used",
+          "deduction_type": "percentage",
+          "deduction_value": 3,
+          "flag_for_business_review": true
+        },
+        {
+          "option_value": "heavily_used",
+          "deduction_type": "percentage",
+          "deduction_value": 8,
+          "flag_for_business_review": true
+        },
+        {
+          "option_value": "broken",
+          "deduction_type": "fixed",
+          "deduction_value": 0,
+          "is_disqualifying": true,
+          "disqualify_status": "manual_review"
+        }
       ]
     },
     {
@@ -217,19 +506,41 @@
       "type": "single_select",
       "display_order": 15,
       "options": [
-        { "label": "Yes", "value": "yes" },
-        { "label": "No", "value": "no" },
-        { "label": "I am not sure", "value": "not_sure" }
+        {
+          "label": "Yes",
+          "value": "yes"
+        },
+        {
+          "label": "No",
+          "value": "no"
+        },
+        {
+          "label": "I am not sure",
+          "value": "not_sure"
+        }
       ],
       "deduction_rules": [
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 25, "flag_for_business_review": true },
-        { "option_value": "not_sure", "deduction_type": "fixed", "deduction_value": 0, "flag_for_business_review": true }
+        {
+          "option_value": "yes",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "no",
+          "deduction_type": "percentage",
+          "deduction_value": 6,
+          "flag_for_business_review": true
+        },
+        {
+          "option_value": "not_sure",
+          "deduction_type": "percentage",
+          "deduction_value": 0,
+          "flag_for_business_review": true
+        }
       ],
       "note": "'Not sure' currently carries no deduction and battery is re-checked at inspection. Business should decide whether to apply a conservative placeholder deduction instead, to hedge against overpaying when it turns out to be under 85%."
     }
   ],
-
   "samsung_questions": [
     {
       "local_id": "storage_capacity",
@@ -238,11 +549,20 @@
       "type": "device_selector",
       "display_order": 1,
       "options": [
-        { "label": "256GB", "value": "256" },
-        { "label": "512GB", "value": "512" },
-        { "label": "1TB", "value": "1024" }
+        {
+          "label": "256GB",
+          "value": "256"
+        },
+        {
+          "label": "512GB",
+          "value": "512"
+        },
+        {
+          "label": "1TB",
+          "value": "1024"
+        }
       ],
-      "note": "Not a deduction question — selects the device row / base_price, same as iPhone's storage_capacity."
+      "note": "Not a deduction question \u2014 selects the device row / base_price, same as iPhone's storage_capacity."
     },
     {
       "local_id": "overall_functional",
@@ -250,8 +570,23 @@
       "text": "Is the Samsung working properly?",
       "type": "boolean",
       "display_order": 2,
-      "options": [{ "label": "Yes", "value": "yes" }, { "label": "No", "value": "no" }],
-      "deduction_rules": [{ "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0 }],
+      "options": [
+        {
+          "label": "Yes",
+          "value": "yes"
+        },
+        {
+          "label": "No",
+          "value": "no"
+        }
+      ],
+      "deduction_rules": [
+        {
+          "option_value": "yes",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        }
+      ],
       "note": "If 'no', show the per-function checklist below."
     },
     {
@@ -260,10 +595,29 @@
       "text": "Is the device SIM-locked to a specific carrier?",
       "type": "boolean",
       "display_order": 3,
-      "options": [{ "label": "No", "value": "no" }, { "label": "Yes", "value": "yes" }],
+      "options": [
+        {
+          "label": "No",
+          "value": "no"
+        },
+        {
+          "label": "Yes",
+          "value": "yes"
+        }
+      ],
       "deduction_rules": [
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0, "is_disqualifying": true, "disqualify_status": "rejected" }
+        {
+          "option_value": "no",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "yes",
+          "deduction_type": "fixed",
+          "deduction_value": 0,
+          "is_disqualifying": true,
+          "disqualify_status": "rejected"
+        }
       ]
     },
     {
@@ -272,10 +626,29 @@
       "text": "Has the device been exposed to liquid or water damage?",
       "type": "boolean",
       "display_order": 4,
-      "options": [{ "label": "No", "value": "no" }, { "label": "Yes", "value": "yes" }],
+      "options": [
+        {
+          "label": "No",
+          "value": "no"
+        },
+        {
+          "label": "Yes",
+          "value": "yes"
+        }
+      ],
       "deduction_rules": [
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0, "is_disqualifying": true, "disqualify_status": "manual_review" }
+        {
+          "option_value": "no",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "yes",
+          "deduction_type": "fixed",
+          "deduction_value": 0,
+          "is_disqualifying": true,
+          "disqualify_status": "manual_review"
+        }
       ]
     },
     {
@@ -284,11 +657,32 @@
       "text": "Does the fingerprint scanner work?",
       "type": "boolean",
       "display_order": 5,
-      "depends_on": { "question": "overall_functional", "value": "no" },
-      "options": [{ "label": "Yes", "value": "yes" }, { "label": "No", "value": "no" }],
+      "depends_on": {
+        "question": "overall_functional",
+        "value": "no"
+      },
+      "options": [
+        {
+          "label": "Yes",
+          "value": "yes"
+        },
+        {
+          "label": "No",
+          "value": "no"
+        }
+      ],
       "deduction_rules": [
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 30, "flag_for_business_review": true }
+        {
+          "option_value": "yes",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "no",
+          "deduction_type": "percentage",
+          "deduction_value": 16,
+          "flag_for_business_review": true
+        }
       ]
     },
     {
@@ -297,11 +691,33 @@
       "text": "Does the device start up?",
       "type": "boolean",
       "display_order": 6,
-      "depends_on": { "question": "overall_functional", "value": "no" },
-      "options": [{ "label": "Yes", "value": "yes" }, { "label": "No", "value": "no" }],
+      "depends_on": {
+        "question": "overall_functional",
+        "value": "no"
+      },
+      "options": [
+        {
+          "label": "Yes",
+          "value": "yes"
+        },
+        {
+          "label": "No",
+          "value": "no"
+        }
+      ],
       "deduction_rules": [
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 0, "is_disqualifying": true, "disqualify_status": "manual_review" }
+        {
+          "option_value": "yes",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "no",
+          "deduction_type": "fixed",
+          "deduction_value": 0,
+          "is_disqualifying": true,
+          "disqualify_status": "manual_review"
+        }
       ]
     },
     {
@@ -310,11 +726,32 @@
       "text": "Does the device charge normally?",
       "type": "boolean",
       "display_order": 7,
-      "depends_on": { "question": "overall_functional", "value": "no" },
-      "options": [{ "label": "Yes", "value": "yes" }, { "label": "No", "value": "no" }],
+      "depends_on": {
+        "question": "overall_functional",
+        "value": "no"
+      },
+      "options": [
+        {
+          "label": "Yes",
+          "value": "yes"
+        },
+        {
+          "label": "No",
+          "value": "no"
+        }
+      ],
       "deduction_rules": [
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 40, "flag_for_business_review": true }
+        {
+          "option_value": "yes",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "no",
+          "deduction_type": "percentage",
+          "deduction_value": 21,
+          "flag_for_business_review": true
+        }
       ]
     },
     {
@@ -323,11 +760,32 @@
       "text": "Does sound playback work (speaker and earpiece)?",
       "type": "boolean",
       "display_order": 8,
-      "depends_on": { "question": "overall_functional", "value": "no" },
-      "options": [{ "label": "Yes", "value": "yes" }, { "label": "No", "value": "no" }],
+      "depends_on": {
+        "question": "overall_functional",
+        "value": "no"
+      },
+      "options": [
+        {
+          "label": "Yes",
+          "value": "yes"
+        },
+        {
+          "label": "No",
+          "value": "no"
+        }
+      ],
       "deduction_rules": [
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 20, "flag_for_business_review": true }
+        {
+          "option_value": "yes",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "no",
+          "deduction_type": "percentage",
+          "deduction_value": 11,
+          "flag_for_business_review": true
+        }
       ]
     },
     {
@@ -336,11 +794,32 @@
       "text": "Do the cameras work?",
       "type": "boolean",
       "display_order": 9,
-      "depends_on": { "question": "overall_functional", "value": "no" },
-      "options": [{ "label": "Yes", "value": "yes" }, { "label": "No", "value": "no" }],
+      "depends_on": {
+        "question": "overall_functional",
+        "value": "no"
+      },
+      "options": [
+        {
+          "label": "Yes",
+          "value": "yes"
+        },
+        {
+          "label": "No",
+          "value": "no"
+        }
+      ],
       "deduction_rules": [
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 40, "flag_for_business_review": true }
+        {
+          "option_value": "yes",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "no",
+          "deduction_type": "percentage",
+          "deduction_value": 21,
+          "flag_for_business_review": true
+        }
       ]
     },
     {
@@ -349,11 +828,32 @@
       "text": "Does the flashlight work?",
       "type": "boolean",
       "display_order": 10,
-      "depends_on": { "question": "overall_functional", "value": "no" },
-      "options": [{ "label": "Yes", "value": "yes" }, { "label": "No", "value": "no" }],
+      "depends_on": {
+        "question": "overall_functional",
+        "value": "no"
+      },
+      "options": [
+        {
+          "label": "Yes",
+          "value": "yes"
+        },
+        {
+          "label": "No",
+          "value": "no"
+        }
+      ],
       "deduction_rules": [
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 10, "flag_for_business_review": true }
+        {
+          "option_value": "yes",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "no",
+          "deduction_type": "percentage",
+          "deduction_value": 5,
+          "flag_for_business_review": true
+        }
       ]
     },
     {
@@ -362,11 +862,32 @@
       "text": "Do all buttons work?",
       "type": "boolean",
       "display_order": 11,
-      "depends_on": { "question": "overall_functional", "value": "no" },
-      "options": [{ "label": "Yes", "value": "yes" }, { "label": "No", "value": "no" }],
+      "depends_on": {
+        "question": "overall_functional",
+        "value": "no"
+      },
+      "options": [
+        {
+          "label": "Yes",
+          "value": "yes"
+        },
+        {
+          "label": "No",
+          "value": "no"
+        }
+      ],
       "deduction_rules": [
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 15, "flag_for_business_review": true }
+        {
+          "option_value": "yes",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "no",
+          "deduction_type": "percentage",
+          "deduction_value": 8,
+          "flag_for_business_review": true
+        }
       ]
     },
     {
@@ -375,11 +896,32 @@
       "text": "Does the vibration motor work?",
       "type": "boolean",
       "display_order": 12,
-      "depends_on": { "question": "overall_functional", "value": "no" },
-      "options": [{ "label": "Yes", "value": "yes" }, { "label": "No", "value": "no" }],
+      "depends_on": {
+        "question": "overall_functional",
+        "value": "no"
+      },
+      "options": [
+        {
+          "label": "Yes",
+          "value": "yes"
+        },
+        {
+          "label": "No",
+          "value": "no"
+        }
+      ],
       "deduction_rules": [
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 10, "flag_for_business_review": true }
+        {
+          "option_value": "yes",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "no",
+          "deduction_type": "percentage",
+          "deduction_value": 5,
+          "flag_for_business_review": true
+        }
       ]
     },
     {
@@ -389,18 +931,50 @@
       "type": "single_select",
       "display_order": 13,
       "options": [
-        { "label": "As new — no scratches or damage", "value": "as_new" },
-        { "label": "Lightly used — minor superficial scratches", "value": "lightly_used" },
-        { "label": "Heavily used — clearly visible, deeper scratches", "value": "heavily_used" },
-        { "label": "Broken — cracked, shattered, non-original, discolored, or not working", "value": "broken" }
+        {
+          "label": "As new \u2014 no scratches or damage",
+          "value": "as_new"
+        },
+        {
+          "label": "Lightly used \u2014 minor superficial scratches",
+          "value": "lightly_used"
+        },
+        {
+          "label": "Heavily used \u2014 clearly visible, deeper scratches",
+          "value": "heavily_used"
+        },
+        {
+          "label": "Broken \u2014 cracked, shattered, non-original, discolored, or not working",
+          "value": "broken"
+        }
       ],
       "deduction_rules": [
-        { "option_value": "as_new", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "lightly_used", "deduction_type": "fixed", "deduction_value": 15, "flag_for_business_review": true },
-        { "option_value": "heavily_used", "deduction_type": "fixed", "deduction_value": 50, "flag_for_business_review": true },
-        { "option_value": "broken", "deduction_type": "fixed", "deduction_value": 0, "is_disqualifying": true, "disqualify_status": "manual_review" }
+        {
+          "option_value": "as_new",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "lightly_used",
+          "deduction_type": "percentage",
+          "deduction_value": 8,
+          "flag_for_business_review": true
+        },
+        {
+          "option_value": "heavily_used",
+          "deduction_type": "percentage",
+          "deduction_value": 26,
+          "flag_for_business_review": true
+        },
+        {
+          "option_value": "broken",
+          "deduction_type": "fixed",
+          "deduction_value": 0,
+          "is_disqualifying": true,
+          "disqualify_status": "manual_review"
+        }
       ],
-      "note": "ASSUMPTION: the source content's Samsung section repeated this question's header without listing options/explanations (unlike iPhone). Reused the iPhone 4-tier scale here — confirm this is correct. See open_questions below."
+      "note": "ASSUMPTION: the source content's Samsung section repeated this question's header without listing options/explanations (unlike iPhone). Reused the iPhone 4-tier scale here \u2014 confirm this is correct. See open_questions below."
     },
     {
       "local_id": "battery_status",
@@ -409,18 +983,49 @@
       "type": "single_select",
       "display_order": 14,
       "options": [
-        { "label": "Good", "value": "good" },
-        { "label": "Normal", "value": "normal" },
-        { "label": "Weak", "value": "weak" },
-        { "label": "I don't know", "value": "unknown" }
+        {
+          "label": "Good",
+          "value": "good"
+        },
+        {
+          "label": "Normal",
+          "value": "normal"
+        },
+        {
+          "label": "Weak",
+          "value": "weak"
+        },
+        {
+          "label": "I don't know",
+          "value": "unknown"
+        }
       ],
       "deduction_rules": [
-        { "option_value": "good", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "normal", "deduction_type": "fixed", "deduction_value": 10, "flag_for_business_review": true },
-        { "option_value": "weak", "deduction_type": "fixed", "deduction_value": 25, "flag_for_business_review": true },
-        { "option_value": "unknown", "deduction_type": "fixed", "deduction_value": 0, "flag_for_business_review": true }
+        {
+          "option_value": "good",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "normal",
+          "deduction_type": "percentage",
+          "deduction_value": 5,
+          "flag_for_business_review": true
+        },
+        {
+          "option_value": "weak",
+          "deduction_type": "percentage",
+          "deduction_value": 13,
+          "flag_for_business_review": true
+        },
+        {
+          "option_value": "unknown",
+          "deduction_type": "percentage",
+          "deduction_value": 0,
+          "flag_for_business_review": true
+        }
       ],
-      "note": "Qualitative scale, unlike iPhone's percentage-based check — Android doesn't expose a standard battery-health percentage the way iOS does. 'I don't know' has the same open question as iPhone's 'not sure'."
+      "note": "Qualitative scale, unlike iPhone's percentage-based check \u2014 Android doesn't expose a standard battery-health percentage the way iOS does. 'I don't know' has the same open question as iPhone's 'not sure'."
     },
     {
       "local_id": "s_pen_working",
@@ -429,20 +1034,38 @@
       "type": "boolean",
       "display_order": 15,
       "requires_device_attribute": "has_s_pen",
-      "options": [{ "label": "Yes", "value": "yes" }, { "label": "No", "value": "no" }],
-      "deduction_rules": [
-        { "option_value": "yes", "deduction_type": "fixed", "deduction_value": 0 },
-        { "option_value": "no", "deduction_type": "fixed", "deduction_value": 20, "flag_for_business_review": true }
+      "options": [
+        {
+          "label": "Yes",
+          "value": "yes"
+        },
+        {
+          "label": "No",
+          "value": "no"
+        }
       ],
-      "note": "Only shown for devices where devices.has_s_pen = true (Ultra / Fold lines) — this is device-attribute gating, not answer-based branching. See ARCHITECTURE.md §6."
+      "deduction_rules": [
+        {
+          "option_value": "yes",
+          "deduction_type": "percentage",
+          "deduction_value": 0
+        },
+        {
+          "option_value": "no",
+          "deduction_type": "percentage",
+          "deduction_value": 11,
+          "flag_for_business_review": true
+        }
+      ],
+      "note": "Only shown for devices where devices.has_s_pen = true (Ultra / Fold lines) \u2014 this is device-attribute gating, not answer-based branching. See ARCHITECTURE.md \u00a76."
     }
   ],
-
   "open_questions": [
     "Samsung is missing a housing/back-condition question that iPhone has (question 4). Confirm whether that's intentional or needs to be added before launch.",
     "Confirm the Samsung screen-condition options/explanations are meant to match iPhone's 4-tier scale exactly, since the source content didn't spell them out for Samsung.",
     "Confirm which Samsung models should have has_s_pen = true beyond the Galaxy S25 Ultra already flagged in devices.json (Note line and Z Fold are typically S-Pen compatible too).",
     "Decide whether 'not sure' / 'I don't know' battery answers should carry a conservative placeholder deduction, or genuinely stay at 0 until inspection confirms.",
-    "All deduction_value amounts marked flag_for_business_review are placeholders sized to feel directionally reasonable (bigger issues cost more) — none are calibrated against real competitor deductions or target margin yet."
+    "All deduction_value amounts marked flag_for_business_review are placeholders sized to feel directionally reasonable (bigger issues cost more) \u2014 none are calibrated against real competitor deductions or target margin yet.",
+    "RESOLVED 2026-08-19: deduction_type was 100% 'fixed' across all 63 rules, meaning a EUR50 broken-screen deduction was identical for a EUR25 device and a EUR900 device (and could exceed - and floor to EUR0 - a budget device's entire value). Converted every non-disqualifying rule to 'percentage', computed against each brand's median base_price (apple=EUR389, samsung=EUR189) at time of conversion. The underlying severity ranking (which issue costs more than which) is unchanged - only HOW each amount scales with device value. The amounts are still marked flag_for_business_review elsewhere in this file: this resolves the scaling mechanism, not whether the relative severities themselves are correct."
   ]
 }
