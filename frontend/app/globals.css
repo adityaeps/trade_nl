@@ -21,3 +21,23 @@ body {
 input[type="radio"] {
   accent-color: #5a3ff0;
 }
+
+/* Respect the OS-level motion preference: collapses every animation and
+   transition (card fade/slide-in, hover transitions, smooth scroll) to
+   near-instant for anyone who has turned on "reduce motion" - a real,
+   OS-wide accessibility setting, not a cosmetic one. Duration goes to
+   0.01ms rather than 0 so animationend/transitionend listeners still fire
+   (some components rely on that), it just resolves immediately. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
