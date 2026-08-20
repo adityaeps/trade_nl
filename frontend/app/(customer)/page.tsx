@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { DEVICE_PAGE_SIZE, listDevices, type DeviceSummary } from "@/lib/api";
@@ -39,10 +40,15 @@ function BrandBadge({
   brand,
   imageUrl,
   alt,
+  priority,
 }: {
   brand: string;
   imageUrl?: string | null;
   alt?: string;
+  // First couple of rows are above the fold on first paint - fetching those
+  // eagerly (not lazily) is what actually helps here, since lazy-loading an
+  // image the browser needs immediately just delays it.
+  priority?: boolean;
 }) {
   const isApple = brand === "apple";
   // Falls back to the brand-logo tile if the device has no image_url, or if
@@ -52,14 +58,20 @@ function BrandBadge({
 
   if (imageUrl && !failed) {
     return (
-      <div className="flex h-28 items-center justify-center rounded-xl bg-white">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+      <div className="relative flex h-28 items-center justify-center rounded-xl bg-white p-1">
+        {/* next/image resizes + serves WebP/AVIF instead of shipping the
+            full 300x300 source PNG (~90KB) for a box that renders at ~110px -
+            source files are all under frontend/public/, so no remote-pattern
+            config is needed. */}
+        <Image
           src={imageUrl}
           alt={alt ?? ""}
-          loading="lazy"
+          fill
+          sizes="(max-width: 640px) 40vw, (max-width: 768px) 30vw, 200px"
+          loading={priority ? "eager" : "lazy"}
+          priority={priority}
           onError={() => setFailed(true)}
-          className="h-full w-full object-contain p-1"
+          className="object-contain"
         />
       </div>
     );
@@ -293,7 +305,7 @@ export default function CatalogPage() {
                   href={`/devices/${d.slug}`}
                   className="group block h-full rounded-2xl border border-gray-200 bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-raised"
                 >
-                  <BrandBadge brand={d.brand} imageUrl={d.image_url} alt={d.model} />
+                  <BrandBadge brand={d.brand} imageUrl={d.image_url} alt={d.model} priority={i < 6} />
                   <h2 className="mt-4 font-semibold text-gray-900 transition-colors group-hover:text-brand-700">
                     {d.model}
                   </h2>

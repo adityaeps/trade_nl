@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlmodel import Session, select
 
 from app.db.session import get_session
@@ -34,6 +34,7 @@ def _to_summary(device: Device, price: Decimal | None) -> DeviceSummary:
 
 @router.get("", response_model=list[DeviceSummary])
 def list_devices(
+    response: Response,
     brand: Brand | None = None,
     search: str | None = None,
     limit: int = Query(24, ge=1, le=100),
@@ -51,6 +52,14 @@ def list_devices(
     between pages - an unstable ORDER BY makes offset paging drop or repeat
     rows.
     """
+    # Public, non-personalized catalog data - safe for the browser to reuse
+    # for a short window instead of re-fetching on every render/navigation.
+    # 30s is short enough that a price-sync run (admin-triggered, not
+    # scheduled - see §7) is never stale for long; stale-while-revalidate
+    # lets the browser show the cached page instantly while it quietly
+    # refetches, rather than blocking on a fresh request every time.
+    response.headers["Cache-Control"] = "public, max-age=30, stale-while-revalidate=120"
+
     query = select(Device, BasePrice.base_price).where(Device.is_active == True)  # noqa: E712
     # Outer join, not a lookup per device: this endpoint used to run one
     # extra query for every row returned (N+1), which is most of what made

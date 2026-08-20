@@ -72,9 +72,15 @@ export type Store = {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
+    // Mutations and anything tied to a specific quote's live status default
+    // to no-store - that data can change from an admin action or simply
+    // expire, so a stale cached read would be actively wrong. Catalog reads
+    // (listDevices, getDevice, listStores) opt into "default" below, which
+    // lets the browser honor the Cache-Control the API now sends rather
+    // than re-fetching identical public data on every render.
+    cache: "no-store",
     ...init,
     headers: { "Content-Type": "application/json", ...init?.headers },
-    cache: "no-store",
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -101,7 +107,7 @@ export function listDevices(
   if (params.search) qs.set("search", params.search);
   qs.set("limit", String(params.limit ?? DEVICE_PAGE_SIZE));
   if (params.offset) qs.set("offset", String(params.offset));
-  return request<DeviceSummary[]>(`/api/v1/devices?${qs.toString()}`);
+  return request<DeviceSummary[]>(`/api/v1/devices?${qs.toString()}`, { cache: "default" });
 }
 
 export function getDevice(slug: string) {
