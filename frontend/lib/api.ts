@@ -111,7 +111,7 @@ export function listDevices(
 }
 
 export function getDevice(slug: string) {
-  return request<DeviceDetail>(`/api/v1/devices/${slug}`);
+  return request<DeviceDetail>(`/api/v1/devices/${slug}`, { cache: "default" });
 }
 
 export function createQuote(deviceId: string, answers: Record<string, string>) {

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { createQuote, getDevice, type DeviceDetail, type Question } from "@/lib/api";
@@ -141,15 +142,24 @@ export default function DeviceDetailPage() {
       <div className="mt-4 flex items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           {device.image_url && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={device.image_url}
-              alt={device.model}
-              className="h-20 w-20 shrink-0 rounded-xl bg-white object-contain p-1 shadow-soft"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
+            <div className="relative h-20 w-20 shrink-0 rounded-xl bg-white p-1 shadow-soft">
+              {/* next/image instead of a plain <img> - same reasoning as the
+                  home page's card grid: the source files are the full
+                  300x300 original regardless of this 80px box, so this was
+                  shipping several times the needed bytes for the single
+                  most prominent image on the page. */}
+              <Image
+                src={device.image_url}
+                alt={device.model}
+                fill
+                sizes="80px"
+                priority
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+                className="object-contain"
+              />
+            </div>
           )}
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
