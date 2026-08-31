@@ -81,7 +81,12 @@ def list_devices(
 
 
 @router.get("/{slug}", response_model=DeviceDetail)
-def get_device(slug: str, session: Session = Depends(get_session)):
+def get_device(slug: str, response: Response, session: Session = Depends(get_session)):
+    # Same cache reasoning as list_devices above: public, non-personalized,
+    # and everything here (siblings, question set, deduction rules) only
+    # changes via an admin edit or a price sync, not per-request.
+    response.headers["Cache-Control"] = "public, max-age=30, stale-while-revalidate=120"
+
     device = session.exec(select(Device).where(Device.slug == slug)).first()
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
@@ -95,6 +100,17 @@ def get_device(slug: str, session: Session = Depends(get_session)):
         )
         .order_by(Device.storage_gb)
     ).all()
+
+    # One bulk lookup for every sibling's price instead of one query per
+    # sibling (_price_for in a loop) - this and the deduction-rules bulk
+    # lookup below turned a ~4s response into a single-digit-query one.
+    sibling_ids = [s.id for s in siblings]
+    prices_by_device_id = {
+        bp.device_id: bp.base_price
+        for bp in session.exec(
+            select(BasePrice).where(BasePrice.device_id.in_(sibling_ids))
+        ).all()
+    }
 
     questions: list[Question] = []
     question_set = session.exec(
@@ -110,27 +126,33 @@ def get_device(slug: str, session: Session = Depends(get_session)):
         ).all()
         questions = filter_questions_for_device(all_questions, device)
 
-    question_out_list = []
-    for q in questions:
-        rules = session.exec(
-            select(DeductionRule).where(DeductionRule.question_id == q.id)
-        ).all()
-        question_out_list.append(
-            QuestionOut(
-                id=q.id,
-                text=q.text,
-                type=q.type,
-                display_order=q.display_order,
-                options=q.options,
-                depends_on_question_id=q.depends_on_question_id,
-                depends_on_value=q.depends_on_value,
-                requires_device_attribute=q.requires_device_attribute,
-                deduction_rules=rules,
-            )
+    # One bulk lookup for every active question's deduction rules instead of
+    # one query per question.
+    rules_by_question_id: dict[int, list[DeductionRule]] = {}
+    if questions:
+        question_ids = [q.id for q in questions]
+        for rule in session.exec(
+            select(DeductionRule).where(DeductionRule.question_id.in_(question_ids))
+        ).all():
+            rules_by_question_id.setdefault(rule.question_id, []).append(rule)
+
+    question_out_list = [
+        QuestionOut(
+            id=q.id,
+            text=q.text,
+            type=q.type,
+            display_order=q.display_order,
+            options=q.options,
+            depends_on_question_id=q.depends_on_question_id,
+            depends_on_value=q.depends_on_value,
+            requires_device_attribute=q.requires_device_attribute,
+            deduction_rules=rules_by_question_id.get(q.id, []),
         )
+        for q in questions
+    ]
 
     return DeviceDetail(
-        **_to_summary(device, _price_for(session, device.id)).model_dump(),
-        storage_variants=[_to_summary(s, _price_for(session, s.id)) for s in siblings],
+        **_to_summary(device, prices_by_device_id.get(device.id)).model_dump(),
+        storage_variants=[_to_summary(s, prices_by_device_id.get(s.id)) for s in siblings],
         questions=question_out_list,
     )
